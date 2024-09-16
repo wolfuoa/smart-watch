@@ -192,11 +192,63 @@ static void InitLSM()
 
 static void startMag()
 {
-	// #CS704 - Write SPI commands to initiliase Magnetometer
-	uint8_t entry[10];
+	uint8_t entry;
 
-	entry[0] = 0x37U;
-	BSP_LSM303AGR_WriteReg_Acc(0x20U, entry, 1);
+	// ---------------- CFG_REG_A_M (0x60) ----------------
+	/** bio
+	 *
+	 * The configuration register is used to configure the output
+	 * data rate and the measurement configuration.
+	 *
+	 ** current config
+	 *
+	 * 0b00000000
+	 * - Continuous
+	 * - Normal (Not Low Power)
+	 * - 10Hz
+	 *
+	 */
+
+	entry = 0x00U;
+	BSP_LSM303AGR_WriteReg_Mag(0x60U, &entry, 1);
+
+	// ----------------------------------------------------
+
+	// ---------------- CFG_REG_B_M (0x61) ----------------
+	/** bio
+	 *
+	 * The configuration register is used to configure offset
+	 * calculation, set pulse frequency, and low-pass digital
+	 * filtering
+	 *
+	 ** current config
+	 *
+	 * 0b00000000
+	 *
+	 */
+
+	entry = 0x00U;
+	BSP_LSM303AGR_WriteReg_Mag(0x61U, &entry, 1);
+
+	// ----------------------------------------------------
+
+	// ---------------- CFG_REG_C_M (0x62) ----------------
+	/** bio
+	 *
+	 * The configuration register is used to configure I2C
+	 * interface, data inversion, and digital output
+	 *
+	 ** current config
+	 *
+	 * 0b00000001
+	 * - Use DRDY instead of guessing
+	 *
+	 */
+
+	entry = 0x01U;
+	BSP_LSM303AGR_WriteReg_Mag(0x62U, &entry, 1);
+
+	// ----------------------------------------------------
 }
 
 static void startAcc()
