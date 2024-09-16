@@ -186,27 +186,41 @@ static void InitLSM() {
 
 static void startMag() {
 	//#CS704 - Write SPI commands to initiliase Magnetometer
+   uint8_t entry[10];
+
+  entry[0] = 0x37U;
+  BSP_LSM303AGR_WriteReg_Acc(0x20U, entry, 1);
 }
 
 static void startAcc() {
 	//#CS704 - Write SPI commands to initiliase Accelerometer
+  uint8_t entry[10];
+
+  entry[0] = 0x37U;
+  BSP_LSM303AGR_WriteReg_Acc(0x20U, entry, 1);
 }
 
 static void readMag() {
-
 	//#CS704 - Read Magnetometer Data over SPI
+  uint8_t entry_l;
+  uint8_t entry_h;
+
+  BSP_LSM303AGR_ReadReg_Mag(0x45, &entry_l, 1);
+  BSP_LSM303AGR_ReadReg_Mag(0x46, &entry_h, 1);
 
 	//#CS704 - store sensor values into the variables below
-	MAG_Value.x=100;
+	MAG_Value.x=entry_l;
 	MAG_Value.y=200;
 	MAG_Value.z=1000;
 
-//	XPRINTF("MAG=%d,%d,%d\r\n",magx,magy,magz);
+	XPRINTF("MAG=%d,%d,%d\r\n",MAG_Value.x,0,0);
 }
 
 static void readAcc() {
-
 	//#CS704 - Read Accelerometer Data over SPI
+  uint8_t entry[10];
+
+  BSP_LSM303AGR_ReadReg_Acc(0x28, entry, 1);
 
 	//#CS704 - store sensor values into the variables below
 	ACC_Value.x=100;
