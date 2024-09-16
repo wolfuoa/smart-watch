@@ -1,6 +1,25 @@
 # Prerequisites
 *.d
 
+.metadata
+.DS_Store
+._.DS_Store
+
+# eclipse specific git ignore
+.metadata/
+RemoteSystemsTempFiles/
+.settings/
+Debug/
+Release/
+*.launch
+
+
+# STM32 git ignore
+*.mxproject
+
+
+
+
 # Object files
 *.o
 *.ko
