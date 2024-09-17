@@ -345,7 +345,33 @@ static void readAcc()
 		ACC_Value.z = outz;
 	}
 
-	XPRINTF("ACC=%d,%d,%d\t",ACC_Value.x,ACC_Value.y,ACC_Value.z);
+//	ACC_Value.z -= 9.80665*1000;
+	XPRINTF("ACC=%d,%d,%d\t\t",ACC_Value.x,ACC_Value.y,ACC_Value.z);
+
+
+	
+
+//	// convert to m/s^2 and adjust for gravity
+//	float xAccel = ACC_Value.x * (9.80665/1000.0);
+//	float yAccel = ACC_Value.y * (9.80665/1000.0);
+//	float zAccel = ACC_Value.z * (9.80665/1000.0);
+//
+//	// Printing out float m/s^2 values
+//	printFloatsAsInts(xAccel, yAccel, zAccel);
+
+}
+
+void printFloatsAsInts(float x, float y, float z) {
+    int xInt = (int)x; // Extract the integer
+    int xFrac = (int)((x - xInt) * 10000); // Extract fractional with 4dp
+
+    int yInt = (int)y;
+    int yFrac = (int)((y - yInt) * 10000);
+
+    int zInt = (int)z;
+    int zFrac = (int)((z - zInt) * 10000);
+
+    XPRINTF("Accel=%d.%04d,%d.%04d,%d.%04d", xInt, xFrac, yInt, yFrac, zInt, zFrac);
 }
 
 /**
