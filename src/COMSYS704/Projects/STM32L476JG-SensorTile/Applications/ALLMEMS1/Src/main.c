@@ -201,18 +201,18 @@ static void startGyroscope()
 {
 	uint8_t entry;
 
-	// ---------------- CFG_REG_A_M (0x60) ----------------
+	// ---------------- CTRL2_G (0x11) ----------------
 	/** bio
 	 *
-	 * The configuration register is used to configure the output
-	 * data rate and the measurement configuration.
+	 * The configuration register is used to configure the
+	 * angular rate sensor in the gyroscope
 	 *
 	 ** current config
 	 *
 	 * 0b00010000
 	 * - Continuous
 	 * - Normal (Not Low Power)
-	 * - 10Hz
+	 * - 12.5Hz
 	 *
 	 */
 
@@ -221,12 +221,11 @@ static void startGyroscope()
 
 	// ----------------------------------------------------
 
-	// ---------------- CFG_REG_B_M (0x61) ----------------
+	// ---------------- CTRL7_G (0x16) ----------------
 	/** bio
 	 *
-	 * The configuration register is used to configure offset
-	 * calculation, set pulse frequency, and low-pass digital
-	 * filtering
+	 * The configuration register is used to configure filtering
+	 * and rounding in the Gyroscope
 	 *
 	 ** current config
 	 *
