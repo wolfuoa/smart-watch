@@ -262,19 +262,66 @@ static void startAcc()
 
 static void readMag()
 {
-	// #CS704 - Read Magnetometer Data over SPI
-	uint8_t entry_l;
-	uint8_t entry_h;
+	uint8_t outx_l;
+	uint8_t outx_h;
+	uint8_t outy_l;
+	uint8_t outy_h;
+	uint8_t outz_l;
+	uint8_t outz_h;
 
-	BSP_LSM303AGR_ReadReg_Mag(0x45, &entry_l, 1);
-	BSP_LSM303AGR_ReadReg_Mag(0x46, &entry_h, 1);
+	int16_t outx;
+	int16_t outy;
+	int16_t outz;
 
-	// #CS704 - store sensor values into the variables below
-	MAG_Value.x = entry_l;
-	MAG_Value.y = 200;
-	MAG_Value.z = 1000;
+	BSP_LSM303AGR_ReadReg_Mag(0x68U, &outx_l, 1);
+	BSP_LSM303AGR_ReadReg_Mag(0x69U, &outx_h, 1);
+	BSP_LSM303AGR_ReadReg_Mag(0x6AU, &outy_l, 1);
+	BSP_LSM303AGR_ReadReg_Mag(0x6BU, &outy_h, 1);
+	BSP_LSM303AGR_ReadReg_Mag(0x6CU, &outz_l, 1);
+	BSP_LSM303AGR_ReadReg_Mag(0x6DU, &outz_h, 1);
 
-	XPRINTF("MAG=%d,%d,%d\r\n", MAG_Value.x, 0, 0);
+	outx = (outx_h << 7);
+	outx |= outx_l;
+
+	outy = (outy_h << 7);
+	outy |= outy_l;
+
+	outz = (outz_h << 7);
+	outz |= outz_l;
+
+	int negative;
+
+	negative = (outx_h >> 7);
+	if(negative)
+	{
+		MAG_Value.x = outx | ~((1 << 15) -1);
+	}
+	else
+	{
+		MAG_Value.x = outx;
+	}
+
+	negative = (outy_h >> 7);
+	if(negative)
+	{
+		MAG_Value.y = outy | ~((1 << 15) -1);
+	}
+	else
+	{
+		MAG_Value.y = outy;
+	}
+
+	negative = (outz_h >> 7);
+	if(negative)
+	{
+		MAG_Value.z = outz | ~((1 << 15) -1);
+	}
+	else
+	{
+		MAG_Value.z = outz;
+	}
+
+	XPRINTF("MAG=%d,%d,%d\r\n", MAG_Value.x, MAG_Value.y, MAG_Value.z);
 }
 
 static void readAcc()
