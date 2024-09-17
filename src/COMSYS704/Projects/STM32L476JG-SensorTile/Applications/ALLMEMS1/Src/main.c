@@ -88,6 +88,9 @@
 #define LSM_ACC_CS_LOW()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
 #define LSM_ACC_CS_HIGH()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
 
+#define LSM_GYR_CS_LOW()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+#define LSM_GYR_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+
 /* Imported Variables
  * -------------------------------------------------------------*/
 extern uint8_t set_connectable;
@@ -166,6 +169,10 @@ static int32_t BSP_LSM303AGR_WriteReg_Acc(uint16_t Reg, uint8_t *pdata,
 										  uint16_t len);
 static int32_t BSP_LSM303AGR_ReadReg_Acc(uint16_t Reg, uint8_t *pdata,
 										 uint16_t len);
+static int32_t BSP_LSM6DSM_WriteReg_Gyro(uint16_t Reg, uint8_t *pdata,
+										  uint16_t len);
+static int32_t BSP_LSM6DSM_ReadReg_Gyro(uint16_t Reg, uint8_t *pdata,
+										 uint16_t len);
 void LSM303AGR_SPI_Read_nBytes(SPI_HandleTypeDef *xSpiHandle, uint8_t *val,
 							   uint16_t nBytesToRead);
 void LSM303AGR_SPI_Read(SPI_HandleTypeDef *xSpiHandle, uint8_t *val);
@@ -188,6 +195,50 @@ static void InitLSM()
 	XPRINTF("IAM Mag= %d,%d", inData[0], inData[1]);
 	BSP_LSM303AGR_ReadReg_Acc(0x0F, inData, 1);
 	XPRINTF("IAM Acc= %d,%d", inData[0], inData[1]);
+}
+
+static void startGyroscope()
+{
+	uint8_t entry;
+
+	// ---------------- CFG_REG_A_M (0x60) ----------------
+	/** bio
+	 *
+	 * The configuration register is used to configure the output
+	 * data rate and the measurement configuration.
+	 *
+	 ** current config
+	 *
+	 * 0b00010000
+	 * - Continuous
+	 * - Normal (Not Low Power)
+	 * - 10Hz
+	 *
+	 */
+
+	entry = 0x10;
+	BSP_LSM6DSM_WriteReg_Gyro(0x11U, &entry, 1);
+
+	// ----------------------------------------------------
+
+	// ---------------- CFG_REG_B_M (0x61) ----------------
+	/** bio
+	 *
+	 * The configuration register is used to configure offset
+	 * calculation, set pulse frequency, and low-pass digital
+	 * filtering
+	 *
+	 ** current config
+	 *
+	 * 0b00000000
+	 *
+	 */
+
+	entry = 0x00U;
+	BSP_LSM6DSM_WriteReg_Gyro(0x16U, &entry, 1);
+
+	// ----------------------------------------------------
+
 }
 
 static void startMag()
@@ -291,37 +342,32 @@ static void readMag()
 
 	int negative;
 
+	// outx = 0x0021;
+	// outy = 0xff1d;
+	// outz = 0xfecb;
+
 	negative = (outx_h >> 7);
 	if(negative)
-	{
-		MAG_Value.x = outx | ~((1 << 15) -1);
-	}
-	else
-	{
-		MAG_Value.x = outx;
-	}
+		outx = (outx | ~((1 << 15) -1));
 
 	negative = (outy_h >> 7);
 	if(negative)
-	{
-		MAG_Value.y = outy | ~((1 << 15) -1);
-	}
-	else
-	{
-		MAG_Value.y = outy;
-	}
+		outy = (outy | ~((1 << 15) -1));
 
 	negative = (outz_h >> 7);
 	if(negative)
-	{
-		MAG_Value.z = outz | ~((1 << 15) -1);
-	}
-	else
-	{
-		MAG_Value.z = outz;
-	}
+		outz = (outz | ~((1 << 15) -1));
 
-	XPRINTF("MAG=%d,%d,%d\r\n", MAG_Value.x, MAG_Value.y, MAG_Value.z);
+	outx *= 1.5;
+	outy *= 1.5;
+	outz *= 1.5;
+
+	XPRINTF("MAG=%d,%d,%d\r\n", outx, outy, outz);
+
+	float angle_x;
+	float angle_y;
+	float angle_z;
+
 }
 
 static void readAcc()
@@ -898,6 +944,64 @@ static int32_t BSP_LSM303AGR_ReadReg_Acc(uint16_t Reg, uint8_t *pdata,
 
 	/* CS Disable */
 	LSM_ACC_CS_HIGH();
+	SPI_1LINE_TX(&hbusspi2);
+	__HAL_SPI_ENABLE(&hbusspi2);
+	return ret;
+}
+
+static int32_t BSP_LSM6DSM_WriteReg_Gyro(uint16_t Reg, uint8_t *pdata, uint16_t len)
+{
+	int32_t ret = BSP_ERROR_NONE;
+	uint8_t dataReg = (uint8_t)Reg;
+
+	/* CS Enable */
+	LSM_GYR_CS_LOW();
+
+	if (BSP_SPI2_Send(&dataReg, 1) != 1)
+	{
+		ret = BSP_ERROR_UNKNOWN_FAILURE;
+	}
+
+	if (BSP_SPI2_Send(pdata, len) != len)
+	{
+		ret = BSP_ERROR_UNKNOWN_FAILURE;
+	}
+
+	/* CS Disable */
+	LSM_GYR_CS_HIGH();
+
+	return ret;
+}
+
+static int32_t BSP_LSM6DSM_ReadReg_Gyro(uint16_t Reg, uint8_t *pdata, uint16_t len)
+{
+	int32_t ret = BSP_ERROR_NONE;
+	uint8_t dataReg = (uint8_t)Reg;
+
+	/* CS Enable */
+	LSM_GYR_CS_LOW();
+	if (len > 1)
+	{
+		LSM303AGR_SPI_Write(&hbusspi2, (dataReg) | 0x80 | 0x40);
+	}
+	else
+	{
+		LSM303AGR_SPI_Write(&hbusspi2, (dataReg) | 0x80);
+	}
+	__HAL_SPI_DISABLE(&hbusspi2);
+	SPI_1LINE_RX(&hbusspi2);
+
+	if (len > 1)
+	{
+		LSM303AGR_SPI_Read_nBytes(&hbusspi2, (pdata), len);
+	}
+	else
+	{
+		LSM303AGR_SPI_Read(&hbusspi2, (pdata));
+	}
+
+	/* CS Disable */
+	LSM_GYR_CS_HIGH();
 	SPI_1LINE_TX(&hbusspi2);
 	__HAL_SPI_ENABLE(&hbusspi2);
 	return ret;
