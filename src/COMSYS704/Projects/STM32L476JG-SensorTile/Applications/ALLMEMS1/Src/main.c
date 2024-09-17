@@ -254,10 +254,14 @@ static void startMag()
 static void startAcc()
 {
 	// #CS704 - Write SPI commands to initiliase Accelerometer
-	uint8_t entry[10];
+	uint8_t entry;
 
-	entry[0] = 0x37U;
-	BSP_LSM303AGR_WriteReg_Acc(0x20U, entry, 1);
+	// enable SPI, 12-bit mode, xyz registers
+	entry = 0x09;
+	BSP_LSM303AGR_WriteReg_Acc(0x23, &entry, 1);
+	entry = 0x57;
+	BSP_LSM303AGR_WriteReg_Acc(0x20, &entry, 1);
+
 }
 
 static void readMag()
@@ -274,22 +278,74 @@ static void readMag()
 	MAG_Value.y = 200;
 	MAG_Value.z = 1000;
 
-	XPRINTF("MAG=%d,%d,%d\r\n", MAG_Value.x, 0, 0);
+
+	XPRINTF("MAG=%d,%d,%d\t\t", MAG_Value.x, MAG_Value.y, MAG_Value.z);
 }
 
 static void readAcc()
 {
 	// #CS704 - Read Accelerometer Data over SPI
-	uint8_t entry[10];
+	uint8_t OUTX_L_A;
+	uint8_t OUTX_H_A;
+	uint8_t OUTY_L_A;
+	uint8_t OUTY_H_A;
+	uint8_t OUTZ_L_A;
+	uint8_t OUTZ_H_A;
 
-	BSP_LSM303AGR_ReadReg_Acc(0x28, entry, 1);
+	int16_t outx;
+	int16_t outy;
+	int16_t outz;
 
-	// #CS704 - store sensor values into the variables below
-	ACC_Value.x = 100;
-	ACC_Value.y = 200;
-	ACC_Value.z = 1000;
 
-	//	XPRINTF("ACC=%d,%d,%d\r\n",accx,accy,accz);
+	BSP_LSM303AGR_ReadReg_Acc(0x28, &OUTX_L_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x29, &OUTX_H_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2A, &OUTY_L_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2B, &OUTY_H_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2C, &OUTZ_L_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2D, &OUTZ_H_A, 1);
+
+
+	outx = (OUTX_H_A << 7);
+	outy = (OUTY_H_A << 7);
+	outz = (OUTZ_H_A << 7);
+
+	outx |= OUTX_L_A;
+	outy |= OUTY_L_A;
+	outz |= OUTZ_L_A;
+
+	int negative;
+
+	negative = (OUTX_H_A >> 7);
+	if(negative)
+	{
+		ACC_Value.x = outx | ~((1 << 15) -1);
+	}
+	else
+	{
+		ACC_Value.x = outx;
+	}
+
+	negative = (OUTY_H_A >> 7);
+	if(negative)
+	{
+		ACC_Value.y = outy | ~((1 << 15) -1);
+	}
+	else
+	{
+		ACC_Value.y = outy;
+	}
+
+	negative = (OUTZ_H_A >> 7);
+	if(negative)
+	{
+		ACC_Value.z = outz | ~((1 << 15) -1);
+	}
+	else
+	{
+		ACC_Value.z = outz;
+	}
+
+	XPRINTF("ACC=%d,%d,%d\t",ACC_Value.x,ACC_Value.y,ACC_Value.z);
 }
 
 /**
