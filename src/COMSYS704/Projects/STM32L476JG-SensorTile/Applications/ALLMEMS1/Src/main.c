@@ -330,13 +330,13 @@ static void readGyroscope()
 	BSP_LSM6DSM_ReadReg_Gyro(0x26U, &outz_l, 1);
 	BSP_LSM6DSM_ReadReg_Gyro(0x27U, &outz_h, 1);
 
-	outx = (outx_h << 7);
+	outx = (outx_h << 8);
 	outx |= outx_l;
 
-	outy = (outy_h << 7);
+	outy = (outy_h << 8);
 	outy |= outy_l;
 
-	outz = (outz_h << 7);
+	outz = (outz_h << 8);
 	outz |= outz_l;
 
 	int negative;
@@ -376,13 +376,13 @@ static void readMag()
 	BSP_LSM303AGR_ReadReg_Mag(0x6CU, &outz_l, 1);
 	BSP_LSM303AGR_ReadReg_Mag(0x6DU, &outz_h, 1);
 
-	outx = (outx_h << 7);
+	outx = (outx_h << 8);
 	outx |= outx_l;
 
-	outy = (outy_h << 7);
+	outy = (outy_h << 8);
 	outy |= outy_l;
 
-	outz = (outz_h << 7);
+	outz = (outz_h << 8);
 	outz |= outz_l;
 
 	int negative;
