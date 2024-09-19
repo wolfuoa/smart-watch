@@ -43,6 +43,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "gyroscope.h"
+#include "magnetometer.h"
+#include "accelerometer.h"
 
 #include <limits.h>
 #include <math.h>
