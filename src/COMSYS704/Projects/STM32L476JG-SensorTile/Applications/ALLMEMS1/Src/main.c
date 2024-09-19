@@ -143,6 +143,17 @@ typedef struct
 BSP_MOTION_SENSOR_Axes_t ACC_Value;
 COMP_Data COMP_Value;
 BSP_MOTION_SENSOR_Axes_t MAG_Value;
+
+
+
+/* Variables that have been added for the project ----------------------------*/
+
+int32_t xAccAvg = 0;
+int32_t yAccAvg = 0;
+int32_t zAccAvg = 0;
+int32_t maxAccZ = 0;
+
+
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 
@@ -262,6 +273,22 @@ static void startAcc()
 	entry = 0x57;
 	BSP_LSM303AGR_WriteReg_Acc(0x20, &entry, 1);
 
+
+    //calibration to account for steady state error
+    int32_t sumx = 0;
+    int32_t sumy = 0;
+    int32_t sumz = 0;
+    float iters = 1000.0;
+    for (int i = 0; i < iters; i++) {
+        readAcc();
+        sumx += ACC_Value.x;
+        sumy += ACC_Value.y;
+        sumz += ACC_Value.z;
+    }
+    
+    xAccAvg = round(sumx / iters);
+    yAccAvg = round(sumy / iters);
+    zAccAvg = round(sumz / iters);
 }
 
 static void readMag()
@@ -279,10 +306,10 @@ static void readMag()
 	MAG_Value.z = 1000;
 
 
-	XPRINTF("MAG=%d,%d,%d\t\t", MAG_Value.x, MAG_Value.y, MAG_Value.z);
+//	XPRINTF("MAG=%d,%d,%d\t\t", MAG_Value.x, MAG_Value.y, MAG_Value.z);
 }
 
-static void readAcc()
+void readAcc()
 {
 	// #CS704 - Read Accelerometer Data over SPI
 	uint8_t OUTX_L_A;
@@ -305,9 +332,9 @@ static void readAcc()
 	BSP_LSM303AGR_ReadReg_Acc(0x2D, &OUTZ_H_A, 1);
 
 
-	outx = (OUTX_H_A << 7);
-	outy = (OUTY_H_A << 7);
-	outz = (OUTZ_H_A << 7);
+	outx = (OUTX_H_A << 8);
+	outy = (OUTY_H_A << 8);
+	outz = (OUTZ_H_A << 8);
 
 	outx |= OUTX_L_A;
 	outy |= OUTY_L_A;
@@ -345,19 +372,13 @@ static void readAcc()
 		ACC_Value.z = outz;
 	}
 
-//	ACC_Value.z -= 9.80665*1000;
-	XPRINTF("ACC=%d,%d,%d\t\t",ACC_Value.x,ACC_Value.y,ACC_Value.z);
+	ACC_Value.x = ACC_Value.x - xAccAvg; 
+    ACC_Value.y = ACC_Value.y - yAccAvg; 
+	ACC_Value.z = ACC_Value.z - zAccAvg; 
 
+	uint32_t magnitude_vector = (sqrt(ACC_Value.x^2 + ACC_Value.y^2 + ACC_Value.z^2));
 
-	
-
-//	// convert to m/s^2 and adjust for gravity
-//	float xAccel = ACC_Value.x * (9.80665/1000.0);
-//	float yAccel = ACC_Value.y * (9.80665/1000.0);
-//	float zAccel = ACC_Value.z * (9.80665/1000.0);
-//
-//	// Printing out float m/s^2 values
-//	printFloatsAsInts(xAccel, yAccel, zAccel);
+	XPRINTF("A=%d\t%d\t%d\t",ACC_Value.x,ACC_Value.y,ACC_Value.z);
 
 }
 
@@ -474,7 +495,7 @@ int main(void)
 
 			//*********process sensor data*********
 
-			COMP_Value.Steps++;
+			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
 
