@@ -3,26 +3,121 @@
 #include "SensorTile_bus.h"
 #include "spi.h"
 #include "ALLMEMS1_config.h"
+#include <math.h>
 
 #define LSM_ACC_CS_LOW()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
 #define LSM_ACC_CS_HIGH()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
+
+// ---------------- Private Variables ----------------
+int32_t xAccAvg = 0;
+int32_t yAccAvg = 0;
+int32_t zAccAvg = 0;
+int32_t maxAccZ = 0;
+// ---------------------------------------------------
 
 extern SPI_HandleTypeDef hbusspi2;
 
 static int32_t BSP_LSM303AGR_WriteReg_Acc(uint16_t Reg, uint8_t *pdata, uint16_t len);
 static int32_t BSP_LSM303AGR_ReadReg_Acc(uint16_t Reg, uint8_t *pdata, uint16_t len);
 
-void acc_init()
+void acc_init(AccelerometerData *ctx)
 {
 	uint8_t entry;
 
-	// Disable I2C
-	entry = 0x01;
+	// Disable I2C, enable SPI, 12-bit mode, xyz registers
+	entry = 0x09;
 	BSP_LSM303AGR_WriteReg_Acc(0x23, &entry, 1);
+	entry = 0x57;
+	BSP_LSM303AGR_WriteReg_Acc(0x20, &entry, 1);
+
+
+    //calibration to account for steady state error
+    int32_t sumx = 0;
+    int32_t sumy = 0;
+    int32_t sumz = 0;
+    float iters = 1000.0;
+    for (int i = 0; i < iters; i++) {
+        acc_read(ctx);
+        sumx += ctx->x_acc;
+        sumy += ctx->y_acc;
+        sumz += ctx->z_acc;
+    }
+    
+    xAccAvg = round(sumx / iters);
+    yAccAvg = round(sumy / iters);
+    zAccAvg = round(sumz / iters);
 }
 
 void acc_read(AccelerometerData * ctx)
 {
+	uint8_t OUTX_L_A;
+	uint8_t OUTX_H_A;
+	uint8_t OUTY_L_A;
+	uint8_t OUTY_H_A;
+	uint8_t OUTZ_L_A;
+	uint8_t OUTZ_H_A;
+
+	int16_t outx;
+	int16_t outy;
+	int16_t outz;
+
+
+	BSP_LSM303AGR_ReadReg_Acc(0x28, &OUTX_L_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x29, &OUTX_H_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2A, &OUTY_L_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2B, &OUTY_H_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2C, &OUTZ_L_A, 1);
+	BSP_LSM303AGR_ReadReg_Acc(0x2D, &OUTZ_H_A, 1);
+
+
+	outx = (OUTX_H_A << 8);
+	outy = (OUTY_H_A << 8);
+	outz = (OUTZ_H_A << 8);
+
+	outx |= OUTX_L_A;
+	outy |= OUTY_L_A;
+	outz |= OUTZ_L_A;
+
+	int negative;
+
+	negative = (OUTX_H_A >> 7);
+	if(negative)
+	{
+		ctx->x_acc = outx | ~((1 << 15) -1);
+	}
+	else
+	{
+		ctx->x_acc = outx;
+	}
+
+	negative = (OUTY_H_A >> 7);
+	if(negative)
+	{
+		ctx->y_acc = outy | ~((1 << 15) -1);
+	}
+	else
+	{
+		ctx->y_acc = outy;
+	}
+
+	negative = (OUTZ_H_A >> 7);
+	if(negative)
+	{
+		ctx->z_acc = outz | ~((1 << 15) -1);
+	}
+	else
+	{
+		ctx->z_acc = outz;
+	}
+
+	ctx->x_acc = ctx->x_acc - xAccAvg; 
+    ctx->y_acc = ctx->y_acc - yAccAvg; 
+	ctx->z_acc = ctx->z_acc - zAccAvg; 
+
+	//	uint32_t magnitude_vector = (sqrt(ctx->x_acc^2 + ctx->y_acc^2 + ctx->z_acc^2));
+
+
+	XPRINTF("A=%d\t%d\t%d\t",ctx->x_acc,ctx->y_acc,ctx->z_acc);
 }
 
 /**

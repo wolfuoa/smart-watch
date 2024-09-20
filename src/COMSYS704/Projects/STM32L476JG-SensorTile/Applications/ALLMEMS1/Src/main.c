@@ -123,11 +123,6 @@ BSP_MOTION_SENSOR_Axes_t MAG_Value;
 
 /* Variables that have been added for the project ----------------------------*/
 
-int32_t xAccAvg = 0;
-int32_t yAccAvg = 0;
-int32_t zAccAvg = 0;
-int32_t maxAccZ = 0;
-
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
@@ -141,6 +136,7 @@ static void SendMotionData(void);
 static void InitTargetPlatform(void);
 
 void MX_UART5_UART_Init();
+
 void printFloatsAsInts(float x, float y, float z) {
     int xInt = (int)x; // Extract the integer
     int xFrac = (int)((x - xInt) * 10000); // Extract fractional with 4dp
@@ -201,7 +197,7 @@ int main(void)
 	NodeName[7] = 'M';
 
 	mag_init();
-	acc_init();
+	acc_init(&current_accelerometer);
 	gyro_init();
 
 
@@ -254,6 +250,10 @@ int main(void)
 			mag_read(&current_magnetometer);
 			double angle = mag_angle(&current_magnetometer);
 			acc_read(&current_accelerometer);
+			// ----
+			uint32_t count = HAL_TIM_ReadCapturedValue(&TimStepHandle, TIM_CHANNEL_2);
+			XPRINTF("count = %d\t", count);
+			// ----
 			gyro_read(&current_gyroscope);
 
 			//*********process sensor data*********
