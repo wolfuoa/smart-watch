@@ -119,6 +119,7 @@ uint8_t BufferToWrite[256];
 int32_t BytesToWrite;
 TIM_HandleTypeDef TimCCHandle;
 TIM_HandleTypeDef TimEnvHandle;
+TIM_HandleTypeDef TimStepHandle;
 
 uint8_t bdaddr[6];
 uint32_t uhCCR4_Val = DEFAULT_uhCCR4_Val;
@@ -376,10 +377,13 @@ void readAcc()
     ACC_Value.y = ACC_Value.y - yAccAvg; 
 	ACC_Value.z = ACC_Value.z - zAccAvg; 
 
-	uint32_t magnitude_vector = (sqrt(ACC_Value.x^2 + ACC_Value.y^2 + ACC_Value.z^2));
+//	uint32_t magnitude_vector = (sqrt(ACC_Value.x^2 + ACC_Value.y^2 + ACC_Value.z^2));
+
+	uint32_t count = HAL_TIM_ReadCapturedValue(&TimStepHandle, TIM_CHANNEL_2);
+
 
 	XPRINTF("A=%d\t%d\t%d\t",ACC_Value.x,ACC_Value.y,ACC_Value.z);
-
+	XPRINTF("count = %d\t", count);
 }
 
 void printFloatsAsInts(float x, float y, float z) {
@@ -499,7 +503,7 @@ int main(void)
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
 
-			XPRINTF("Steps = %d \r\n", (int)COMP_Value.Steps);
+			//XPRINTF("Steps = %d \r\n", (int)COMP_Value.Steps);
 		}
 
 		//***************************************************
@@ -617,6 +621,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
+
+
 /**
  * @brief  Send Motion Data Acc/Mag/Gyro to BLE
  * @param  None
@@ -675,6 +681,22 @@ static void InitTimers(void)
 		/* Initialization Error */
 		Error_Handler();
 	}
+
+	/* Compute the prescaler value to have TIM2 counter clock equal to 1 KHz */
+	uwPrescalerValue = (uint32_t)((SystemCoreClock / 1000) - 1);
+
+	/* Set TIM2 instance (Step counter) */
+	TimStepHandle.Instance = TIM2;
+	TimStepHandle.Init.Period = 65535;
+	TimStepHandle.Init.Prescaler = uwPrescalerValue;
+	TimStepHandle.Init.ClockDivision = 0;
+	TimStepHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+	if (HAL_TIM_OC_Init(&TimStepHandle) != HAL_OK)
+	{
+		/* Initialization Error */
+		Error_Handler();
+	}
+
 
 	/* Configure the Output Compare channels */
 	/* Common configuration for all channels */
@@ -1071,6 +1093,14 @@ static void DeinitTimers(void)
 	/* Set TIM1 instance (Motion)*/
 	TimCCHandle.Instance = TIM1;
 	if (HAL_TIM_Base_DeInit(&TimCCHandle) != HAL_OK)
+	{
+		/* Deinitialization Error */
+		Error_Handler();
+	}
+
+	/* Set TIM2 instance (Step Counter)*/
+	TimStepHandle.Instance = TIM2;
+	if (HAL_TIM_Base_DeInit(&TimStepHandle) != HAL_OK)
 	{
 		/* Deinitialization Error */
 		Error_Handler();
