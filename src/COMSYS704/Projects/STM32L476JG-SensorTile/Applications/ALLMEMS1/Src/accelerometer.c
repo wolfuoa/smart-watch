@@ -30,6 +30,10 @@ void acc_init(AccelerometerData *ctx)
 	entry = 0x57;
 	BSP_LSM303AGR_WriteReg_Acc(0x20, &entry, 1);
 
+	// Configure high pass filter 10001000
+	entry = 0x88;
+	BSP_LSM303AGR_WriteReg_Acc(0x21, &entry, 1);
+
 
     //calibration to account for steady state error
     int32_t sumx = 0;
@@ -110,9 +114,10 @@ void acc_read(AccelerometerData * ctx)
 		ctx->z_acc = outz;
 	}
 
-	ctx->x_acc = ctx->x_acc - xAccAvg; 
-    ctx->y_acc = ctx->y_acc - yAccAvg; 
-	ctx->z_acc = ctx->z_acc - zAccAvg; 
+	// zero all axis at startup
+//	ctx->x_acc = ctx->x_acc - xAccAvg;
+//    ctx->y_acc = ctx->y_acc - yAccAvg;
+//	ctx->z_acc = ctx->z_acc - zAccAvg;
 
 	//	uint32_t magnitude_vector = (sqrt(ctx->x_acc^2 + ctx->y_acc^2 + ctx->z_acc^2));
 
