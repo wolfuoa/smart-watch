@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "main.h": "c",
+        "allmems1_config.h": "c",
+        "gyroscope.h": "c",
+        "stdint.h": "c",
+        "math.h": "c",
+        "stdio.h": "c",
+        "sensortile_bus.h": "c",
+        "sensortile.h": "c"
+    }
+}

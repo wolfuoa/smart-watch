@@ -27,6 +27,10 @@
 #include "ALLMEMS1_config.h"
 #include <stdio.h>
 
+#include "accelerometer.h"
+#include "magnetometer.h"
+#include "gyroscope.h"
+
 /* Exported macro ------------------------------------------------------------*/
 #define MCR_BLUEMS_F2I_1D(in, out_int, out_dec) {out_int = (int32_t)in; out_dec= (int32_t)((in-out_int)*10);};
 #define MCR_BLUEMS_F2I_2D(in, out_int, out_dec) {out_int = (int32_t)in; out_dec= (int32_t)((in-out_int)*100);};
