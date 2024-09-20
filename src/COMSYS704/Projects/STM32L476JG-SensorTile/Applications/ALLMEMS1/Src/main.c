@@ -313,52 +313,6 @@ static void startAcc()
 	BSP_LSM303AGR_WriteReg_Acc(0x20U, entry, 1);
 }
 
-static void readGyroscope()
-{
-	uint8_t outx_l;
-	uint8_t outx_h;
-	uint8_t outy_l;
-	uint8_t outy_h;
-	uint8_t outz_l;
-	uint8_t outz_h;
-
-	int16_t outx;
-	int16_t outy;
-	int16_t outz;
-
-	BSP_LSM6DSM_ReadReg_Gyro(0x22U, &outx_l, 1);
-	BSP_LSM6DSM_ReadReg_Gyro(0x23U, &outx_h, 1);
-	BSP_LSM6DSM_ReadReg_Gyro(0x24U, &outy_l, 1);
-	BSP_LSM6DSM_ReadReg_Gyro(0x25U, &outy_h, 1);
-	BSP_LSM6DSM_ReadReg_Gyro(0x26U, &outz_l, 1);
-	BSP_LSM6DSM_ReadReg_Gyro(0x27U, &outz_h, 1);
-
-	outx = (outx_h << 8);
-	outx |= outx_l;
-
-	outy = (outy_h << 8);
-	outy |= outy_l;
-
-	outz = (outz_h << 8);
-	outz |= outz_l;
-
-	int negative;
-
-	negative = (outx_h >> 7);
-	if(negative)
-		outx = (outx | ~((1 << 15) -1));
-
-	negative = (outy_h >> 7);
-	if(negative)
-		outy = (outy | ~((1 << 15) -1));
-
-	negative = (outz_h >> 7);
-	if(negative)
-		outz = (outz | ~((1 << 15) -1));
-
-	XPRINTF("GYRO=%d,%d,%d\r\n", outx, outy, outz);
-}
-
 static void readMag()
 {
 	uint8_t outx_l;
@@ -390,10 +344,6 @@ static void readMag()
 
 	int negative;
 
-	// outx = 0x0021;
-	// outy = 0xff1d;
-	// outz = 0xfecb;
-
 	negative = (outx_h >> 7);
 	if(negative)
 		outx = (outx | ~((1 << 15) -1));
@@ -406,15 +356,15 @@ static void readMag()
 	if(negative)
 		outz = (outz | ~((1 << 15) -1));
 
-	outx *= 1.5;
-	outy *= 1.5;
-	outz *= 1.5;
+	outx *= 4.5;
+	outy *= 4.5;
+	outz *= 4.5;
+
+	double angle = (float)180/3.1415926 * atan2(outy, outx);
+
+	XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
 
 	XPRINTF("MAG=%d,%d,%d\r\n", outx, outy, outz);
-
-	float angle_x;
-	float angle_y;
-	float angle_z;
 
 }
 
