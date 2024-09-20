@@ -1,10 +1,24 @@
 #include "accelerometer.h"
+#include "SensorTile.h"
+#include "SensorTile_bus.h"
+#include "spi.h"
+#include "ALLMEMS1_config.h"
+
+#define LSM_ACC_CS_LOW()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
+#define LSM_ACC_CS_HIGH()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
+
+extern SPI_HandleTypeDef hbusspi2;
 
 static int32_t BSP_LSM303AGR_WriteReg_Acc(uint16_t Reg, uint8_t *pdata, uint16_t len);
 static int32_t BSP_LSM303AGR_ReadReg_Acc(uint16_t Reg, uint8_t *pdata, uint16_t len);
 
 void acc_init()
 {
+	uint8_t entry;
+
+	// Disable I2C
+	entry = 0x01;
+	BSP_LSM303AGR_WriteReg_Acc(0x23, &entry, 1);
 }
 
 void acc_read(AccelerometerData * ctx)

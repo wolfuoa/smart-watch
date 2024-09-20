@@ -227,6 +227,7 @@ int main(void)
 
 			//*********get sensor data**********
 			mag_read(&current_magnetometer);
+			double angle = mag_angle(&current_magnetometer);
 			acc_read(&current_accelerometer);
 			gyro_read(&current_gyroscope);
 

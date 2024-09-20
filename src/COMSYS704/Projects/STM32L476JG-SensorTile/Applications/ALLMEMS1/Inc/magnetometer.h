@@ -7,7 +7,7 @@
   * @brief   Magnetometer initialization and utility functions
   ******************************************************************************
   */
-  
+
 #ifndef MAGNETOMETER_H
 #define MAGNETOMETER_H
 
@@ -27,7 +27,8 @@ typedef struct MagnetometerData_t
 // --------- Public Function Declarations ---------
 
 void mag_init();
-void mag_read(MagnetometerData * ctx);
+void mag_read(MagnetometerData *ctx);
+double mag_angle(MagnetometerData *ctx);
 
 // ------------------------------------------------
 

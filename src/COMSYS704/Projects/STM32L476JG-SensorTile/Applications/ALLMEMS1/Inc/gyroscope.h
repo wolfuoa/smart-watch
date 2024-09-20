@@ -7,7 +7,7 @@
   * @brief   Gyroscope initialization and utility functions
   ******************************************************************************
   */
-  
+
 #ifndef GYROSCOPE_H
 #define GYROSCOPE_H
 
@@ -27,7 +27,7 @@ typedef struct GyroscopeData_T
 // --------- Public Function Declarations ---------
 
 void gyro_init();
-void gyro_read(GyroscopeData * ctx);
+void gyro_read(GyroscopeData *ctx);
 
 // ------------------------------------------------
 

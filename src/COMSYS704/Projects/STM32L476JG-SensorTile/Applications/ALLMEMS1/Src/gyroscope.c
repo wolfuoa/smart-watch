@@ -1,4 +1,13 @@
 #include "gyroscope.h"
+#include "SensorTile.h"
+#include "SensorTile_bus.h"
+#include "spi.h"
+#include "ALLMEMS1_config.h"
+
+#define LSM_GYR_CS_LOW()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+#define LSM_GYR_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+
+extern SPI_HandleTypeDef hbusspi2;
 
 static int32_t BSP_LSM6DSM_WriteReg_Gyro(uint16_t Reg, uint8_t *pdata, uint16_t len);
 static int32_t BSP_LSM6DSM_ReadReg_Gyro(uint16_t Reg, uint8_t *pdata, uint16_t len);

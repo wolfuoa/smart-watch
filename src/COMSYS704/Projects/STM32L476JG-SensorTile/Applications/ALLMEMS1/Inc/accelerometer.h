@@ -7,7 +7,7 @@
   * @brief   Accelerometer initialization and utility functions
   ******************************************************************************
   */
-  
+
 #ifndef ACCELEROMETER_H
 #define ACCELEROMETER_H
 
@@ -27,7 +27,7 @@ typedef struct AccelerometerData_t
 // --------- Public Function Declarations ---------
 
 void acc_init();
-void acc_read(AccelerometerData * ctx);
+void acc_read(AccelerometerData *ctx);
 
 // ------------------------------------------------
 
