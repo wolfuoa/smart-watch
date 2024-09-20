@@ -1,11 +1,24 @@
 #include "magnetometer.h"
+#include "SensorTile.h"
+#include "SensorTile_bus.h"
+#include "spi.h"
+#include "ALLMEMS1_config.h"
+
+#define LSM_MAG_CS_LOW()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+#define LSM_MAG_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+
+extern SPI_HandleTypeDef hbusspi2;
 
 static int32_t BSP_LSM303AGR_WriteReg_Mag(uint16_t Reg, uint8_t *pdata,  uint16_t len);
 static int32_t BSP_LSM303AGR_ReadReg_Mag(uint16_t Reg, uint8_t *pdata, uint16_t len);
 
-static void mag_init()
+void mag_init()
 {
 	uint8_t entry;
+
+	// Disable I2C
+	entry = 0x20;
+	BSP_LSM303AGR_WriteReg_Mag(0x62U, &entry, 1);
 
 	// ---------------- CFG_REG_A_M (0x60) ----------------
 	/** bio
@@ -64,7 +77,7 @@ static void mag_init()
 	// ----------------------------------------------------
 }
 
-static void mag_read(MagnetometerData * ctx)
+void mag_read(MagnetometerData * ctx)
 {
 	uint8_t outx_l;
 	uint8_t outx_h;
@@ -165,8 +178,8 @@ static int32_t BSP_LSM303AGR_ReadReg_Mag(uint16_t Reg, uint8_t *pdata,
 	uint8_t dataReg = (uint8_t)Reg;
 
 	/* CS Enable */
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_RESET);
+	LSM_MAG_CS_LOW();
+
 	//  XPRINTF("Data Read = %d,%d\r\n",(dataReg) | 0x80,pdata[0]);
 	LSM303AGR_SPI_Write(&hbusspi2, (dataReg) | 0x80);
 	__HAL_SPI_DISABLE(&hbusspi2);
@@ -182,8 +195,8 @@ static int32_t BSP_LSM303AGR_ReadReg_Mag(uint16_t Reg, uint8_t *pdata,
 	}
 
 	/* CS Disable */
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_SET);
+	LSM_MAG_CS_HIGH();
+
 	SPI_1LINE_TX(&hbusspi2);
 	__HAL_SPI_ENABLE(&hbusspi2);
 	return ret;

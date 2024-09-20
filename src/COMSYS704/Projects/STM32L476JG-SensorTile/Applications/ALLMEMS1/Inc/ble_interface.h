@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    sensor_service.h 
+  * @file    sensor_service.h
   * @author  System Research & Applications Team - Catania Lab.
   * @version 4.2.0
   * @date    07-Feb-2022
@@ -17,14 +17,14 @@
   *
   ******************************************************************************
   */
-  
-/* Define to prevent recursive inclusion -------------------------------------*/  
+
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef _BLE_INTERFACE_H_
 #define _BLE_INTERFACE_H_
 
 #ifdef __cplusplus
  extern "C" {
-#endif 
+#endif
 
 /* Includes ------------------------------------------------------------------*/
 //#include "TargetFeatures.h"
@@ -37,18 +37,17 @@
 #include "bluenrg_gatt_aci.h"
 #include "hci_const.h"
 #include "bluenrg_hal_aci.h"
-#include "bluenrg_aci_const.h"   
+#include "bluenrg_aci_const.h"
 #include "hci.h"
 #include "hci_tl.h"
 #include "hci_le.h"
 #include "sm.h"
 
 #include <stdlib.h>
-#include "main.h"
 
 /* Exported functions ------------------------------------------------------- */
 extern tBleStatus Add_HW_SW_ServW2ST_Service(void);
-extern tBleStatus AccGyroMag_Update(BSP_MOTION_SENSOR_Axes_t *Acc,BSP_MOTION_SENSOR_Axes_t *Gyro,BSP_MOTION_SENSOR_Axes_t *Mag);
+extern tBleStatus AccGyroMag_Update(void *a, void *g, void *m);
 //extern tBleStatus AccEvent_Notify(uint16_t Command, uint8_t dimByte);
 //extern tBleStatus Environmental_Update(int32_t Press,uint16_t Hum,int16_t Temp2,int16_t Temp1);
 //extern tBleStatus AudioLevel_Update(uint16_t *Mic);
@@ -87,7 +86,7 @@ for each packet used for Console Service */
 used in Console service */
 #define W2ST_CONSOLE_END_STRING "\0"
 
-/* @brief  Scale factor. It is used to scale acceleration from mg to g */ 
+/* @brief  Scale factor. It is used to scale acceleration from mg to g */
 #define FROM_MG_TO_G    0.001f
 
 /* Feature mask for Sensor fusion short precision */
