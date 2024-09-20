@@ -11,6 +11,24 @@
 #ifndef ACCELEROMETER_H
 #define ACCELEROMETER_H
 
+#include <stdint.h>
 
+// ---------------- Public Typedef ----------------
+
+typedef struct AccelerometerData_t
+{
+    uint32_t x_acc;
+    uint32_t y_acc;
+    uint32_t z_acc;
+} AccelerometerData;
+
+// ------------------------------------------------
+
+// --------- Public Function Declarations ---------
+
+void acc_init();
+void acc_read(AccelerometerData * ctx);
+
+// ------------------------------------------------
 
 #endif // ACCELEROMETER_H

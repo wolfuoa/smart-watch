@@ -2,6 +2,7 @@
     "files.associations": {
         "main.h": "c",
         "allmems1_config.h": "c",
-        "gyroscope.h": "c"
+        "gyroscope.h": "c",
+        "stdint.h": "c"
     }
 }

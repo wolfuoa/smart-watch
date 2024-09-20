@@ -11,6 +11,24 @@
 #ifndef MAGNETOMETER_H
 #define MAGNETOMETER_H
 
+#include <stdint.h>
 
+// ---------------- Public Typedef ----------------
+
+typedef struct MagnetometerData_t
+{
+    uint32_t mag_x;
+    uint32_t mag_y;
+    uint32_t mag_z;
+} MagnetometerData;
+
+// ------------------------------------------------
+
+// --------- Public Function Declarations ---------
+
+void mag_init();
+void mag_read(MagnetometerData * ctx);
+
+// ------------------------------------------------
 
 #endif // MAGNETOMETER_H
