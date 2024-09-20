@@ -7,6 +7,7 @@
 
 #define LSM_MAG_CS_LOW()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
 #define LSM_MAG_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+#define PI 3.1415926F
 
 extern SPI_HandleTypeDef hbusspi2;
 
@@ -130,7 +131,7 @@ void mag_read(MagnetometerData * ctx)
 
 double mag_angle(MagnetometerData *ctx)
 {
-	double angle = (float)180/3.1415926 * atan2(ctx->mag_y, ctx->mag_x);
+	double angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
 	XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
 

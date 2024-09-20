@@ -17,9 +17,9 @@
 
 typedef struct MagnetometerData_t
 {
-    uint32_t mag_x;
-    uint32_t mag_y;
-    uint32_t mag_z;
+    int32_t mag_x;
+    int32_t mag_y;
+    int32_t mag_z;
 } MagnetometerData;
 
 // ------------------------------------------------
