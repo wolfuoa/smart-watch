@@ -73,9 +73,29 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Application/User/accelerometer.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/accelerometer.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/accelerometer.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Inc/accelerometer.h</locationURI>
+		</link>
+		<link>
 			<name>Application/User/ble_interface.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Src/sensor_service.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/gyroscope.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/gyroscope.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/gyroscope.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Inc/gyroscope.h</locationURI>
 		</link>
 		<link>
 			<name>Application/User/hci_tl_interface.c</name>
@@ -83,9 +103,29 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Src/hci_tl_interface.c</locationURI>
 		</link>
 		<link>
+			<name>Application/User/magnetometer.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/magnetometer.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/magnetometer.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Inc/magnetometer.h</locationURI>
+		</link>
+		<link>
 			<name>Application/User/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Src/main.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/spi.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Src/spi.c</locationURI>
+		</link>
+		<link>
+			<name>Application/User/spi.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Inc/spi.h</locationURI>
 		</link>
 		<link>
 			<name>Application/User/stm32l4xx_hal_msp.c</name>

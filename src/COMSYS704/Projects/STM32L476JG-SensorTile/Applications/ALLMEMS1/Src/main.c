@@ -43,6 +43,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "spi.h"
 
 #include <limits.h>
 #include <math.h>
@@ -60,34 +61,6 @@
 /* Shutdown mode enabled as default for SensorTile */
 #define ENABLE_SHUT_DOWN_MODE				 0
 
-#define BSP_LSM6DSM_INT2_GPIO_PORT			 GPIOA
-#define BSP_LSM6DSM_INT2_GPIO_CLK_ENABLE()	 __GPIOA_CLK_ENABLE()
-#define BSP_LSM6DSM_INT2_GPIO_CLK_DISABLE()	 __GPIOA_CLK_DISABLE()
-#define BSP_LSM6DSM_INT2					 GPIO_PIN_2
-#define BSP_LSM6DSM_INT2_EXTI_IRQn			 EXTI2_IRQn
-
-#define BSP_LSM6DSM_CS_PORT					 GPIOB
-#define BSP_LSM6DSM_CS_PIN					 GPIO_PIN_12
-#define BSP_LSM6DSM_CS_GPIO_CLK_ENABLE()	 __GPIOB_CLK_ENABLE()
-
-#define BSP_LSM303AGR_M_CS_PORT				 GPIOB
-#define BSP_LSM303AGR_M_CS_PIN				 GPIO_PIN_1
-#define BSP_LSM303AGR_M_CS_GPIO_CLK_ENABLE() __GPIOB_CLK_ENABLE()
-
-#define BSP_LSM303AGR_X_CS_PORT				 GPIOC
-#define BSP_LSM303AGR_X_CS_PIN				 GPIO_PIN_4
-#define BSP_LSM303AGR_X_CS_GPIO_CLK_ENABLE() __GPIOC_CLK_ENABLE()
-
-#define BSP_LPS22HB_CS_PORT					 GPIOA
-#define BSP_LPS22HB_CS_PIN					 GPIO_PIN_3
-#define BSP_LPS22HB_CS_GPIO_CLK_ENABLE()	 __GPIOA_CLK_ENABLE()
-
-#define LSM_MAG_CS_LOW()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-#define LSM_MAG_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-
-#define LSM_ACC_CS_LOW()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
-#define LSM_ACC_CS_HIGH()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
-
 /* Imported Variables
  * -------------------------------------------------------------*/
 extern uint8_t set_connectable;
@@ -103,7 +76,6 @@ extern uint32_t NumSample;
 
 /* Exported Variables
  * -------------------------------------------------------------*/
-extern SPI_HandleTypeDef hbusspi2;
 
 extern uint8_t NodeName[8];
 
@@ -140,9 +112,10 @@ typedef struct
 	uint32_t Heading;
 	uint32_t Distance;
 } COMP_Data;
-BSP_MOTION_SENSOR_Axes_t ACC_Value;
+AccelerometerData current_accelerometer;
+MagnetometerData current_magnetometer;
+GyroscopeData current_gyroscope;
 COMP_Data COMP_Value;
-BSP_MOTION_SENSOR_Axes_t MAG_Value;
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 
@@ -153,144 +126,8 @@ static void DeinitTimers(void);
 static void InitTimers(void);
 static void SendMotionData(void);
 static void InitTargetPlatform(void);
-static void InitLSM();
 
 void MX_UART5_UART_Init();
-
-uint8_t Sensor_IO_SPI_CS_Init_All(void);
-static int32_t BSP_LSM303AGR_WriteReg_Mag(uint16_t Reg, uint8_t *pdata,
-										  uint16_t len);
-static int32_t BSP_LSM303AGR_ReadReg_Mag(uint16_t Reg, uint8_t *pdata,
-										 uint16_t len);
-static int32_t BSP_LSM303AGR_WriteReg_Acc(uint16_t Reg, uint8_t *pdata,
-										  uint16_t len);
-static int32_t BSP_LSM303AGR_ReadReg_Acc(uint16_t Reg, uint8_t *pdata,
-										 uint16_t len);
-void LSM303AGR_SPI_Read_nBytes(SPI_HandleTypeDef *xSpiHandle, uint8_t *val,
-							   uint16_t nBytesToRead);
-void LSM303AGR_SPI_Read(SPI_HandleTypeDef *xSpiHandle, uint8_t *val);
-void LSM303AGR_SPI_Write(SPI_HandleTypeDef *xSpiHandle, uint8_t val);
-
-static void InitLSM()
-{
-	uint8_t inData[10];
-	// setup CS pins on all SPI devices
-	Sensor_IO_SPI_CS_Init_All();
-	// #CS704 - sample usage of SPI READ and WRITE functions
-	// Disable I2C on Acc and Mag - WRITE
-	inData[0] = 0x01;
-	BSP_LSM303AGR_WriteReg_Acc(0x23, inData, 1);
-	inData[0] = 0x20;
-	BSP_LSM303AGR_WriteReg_Mag(0x62U, inData, 1);
-
-	// Read IAM registers for Acc and Mag to verify connection - READ
-	BSP_LSM303AGR_ReadReg_Mag(0x4F, inData, 1);
-	XPRINTF("IAM Mag= %d,%d", inData[0], inData[1]);
-	BSP_LSM303AGR_ReadReg_Acc(0x0F, inData, 1);
-	XPRINTF("IAM Acc= %d,%d", inData[0], inData[1]);
-}
-
-static void startMag()
-{
-	uint8_t entry;
-
-	// ---------------- CFG_REG_A_M (0x60) ----------------
-	/** bio
-	 *
-	 * The configuration register is used to configure the output
-	 * data rate and the measurement configuration.
-	 *
-	 ** current config
-	 *
-	 * 0b00000000
-	 * - Continuous
-	 * - Normal (Not Low Power)
-	 * - 10Hz
-	 *
-	 */
-
-	entry = 0x00U;
-	BSP_LSM303AGR_WriteReg_Mag(0x60U, &entry, 1);
-
-	// ----------------------------------------------------
-
-	// ---------------- CFG_REG_B_M (0x61) ----------------
-	/** bio
-	 *
-	 * The configuration register is used to configure offset
-	 * calculation, set pulse frequency, and low-pass digital
-	 * filtering
-	 *
-	 ** current config
-	 *
-	 * 0b00000000
-	 *
-	 */
-
-	entry = 0x00U;
-	BSP_LSM303AGR_WriteReg_Mag(0x61U, &entry, 1);
-
-	// ----------------------------------------------------
-
-	// ---------------- CFG_REG_C_M (0x62) ----------------
-	/** bio
-	 *
-	 * The configuration register is used to configure I2C
-	 * interface, data inversion, and digital output
-	 *
-	 ** current config
-	 *
-	 * 0b00000001
-	 * - Use DRDY instead of guessing
-	 *
-	 */
-
-	entry = 0x01U;
-	BSP_LSM303AGR_WriteReg_Mag(0x62U, &entry, 1);
-
-	// ----------------------------------------------------
-}
-
-static void startAcc()
-{
-	// #CS704 - Write SPI commands to initiliase Accelerometer
-	uint8_t entry[10];
-
-	entry[0] = 0x37U;
-	BSP_LSM303AGR_WriteReg_Acc(0x20U, entry, 1);
-}
-
-static void readMag()
-{
-	// #CS704 - Read Magnetometer Data over SPI
-	uint8_t entry_l;
-	uint8_t entry_h;
-
-	BSP_LSM303AGR_ReadReg_Mag(0x45, &entry_l, 1);
-	BSP_LSM303AGR_ReadReg_Mag(0x46, &entry_h, 1);
-
-	// #CS704 - store sensor values into the variables below
-	MAG_Value.x = entry_l;
-	MAG_Value.y = 200;
-	MAG_Value.z = 1000;
-
-	XPRINTF("MAG=%d,%d,%d\r\n", MAG_Value.x, 0, 0);
-}
-
-static void readAcc()
-{
-	// #CS704 - Read Accelerometer Data over SPI
-	uint8_t entry[10];
-
-	BSP_LSM303AGR_ReadReg_Acc(0x28, entry, 1);
-
-	// #CS704 - store sensor values into the variables below
-	ACC_Value.x = 100;
-	ACC_Value.y = 200;
-	ACC_Value.z = 1000;
-
-	//	XPRINTF("ACC=%d,%d,%d\r\n",accx,accy,accz);
-}
 
 /**
  * @brief  Main program
@@ -338,8 +175,10 @@ int main(void)
 	NodeName[6] = 'O';
 	NodeName[7] = 'M';
 
-	startMag();
-	startAcc();
+	mag_init();
+	acc_init();
+	gyro_init();
+
 
 	uint8_t BufferToWrite[10] = "ABCDE";
 	//***************************************************
@@ -387,8 +226,10 @@ int main(void)
 			ReadSensor = 0;
 
 			//*********get sensor data**********
-			readMag();
-			readAcc();
+			mag_read(&current_magnetometer);
+			double angle = mag_angle(&current_magnetometer);
+			acc_read(&current_accelerometer);
+			gyro_read(&current_gyroscope);
 
 			//*********process sensor data*********
 
@@ -425,8 +266,8 @@ void InitTargetPlatform(void)
 	BSP_LED_Init(LED1);
 	/* Initialize UART */
 	MX_UART5_UART_Init();
-
-	InitLSM();	// N4S
+	/* Initialize sensor SPI */
+	Sensor_IO_SPI_CS_Init_All();
 }
 
 /**
@@ -521,8 +362,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  */
 static void SendMotionData(void)
 {
-	AccGyroMag_Update(&ACC_Value, (BSP_MOTION_SENSOR_Axes_t *)&COMP_Value,
-					  &MAG_Value);
+	AccGyroMag_Update(&current_accelerometer, &current_gyroscope, &current_magnetometer);
 }
 
 /**
@@ -621,332 +461,7 @@ static void InitTimers(void)
 	}
 }
 
-/**
- * @brief  Set all sensor Chip Select high. To be called before any SPI
- * read/write
- * @param  None
- * @retval HAL_StatusTypeDef HAL Status
- */
-uint8_t Sensor_IO_SPI_CS_Init_All(void)
-{
-	GPIO_InitTypeDef GPIO_InitStruct;
-	uint8_t inData[2];
-	/* Set all the pins before init to avoid glitch */
-	BSP_LSM6DSM_CS_GPIO_CLK_ENABLE();
-	BSP_LSM303AGR_M_CS_GPIO_CLK_ENABLE();
-	BSP_LSM303AGR_X_CS_GPIO_CLK_ENABLE();
-	BSP_LPS22HB_CS_GPIO_CLK_ENABLE();
 
-	HAL_GPIO_WritePin(BSP_LSM6DSM_CS_PORT, BSP_LSM6DSM_CS_PIN, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(BSP_LSM303AGR_X_CS_PORT, BSP_LSM303AGR_X_CS_PIN,
-					  GPIO_PIN_SET);
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_SET);
-	HAL_GPIO_WritePin(BSP_LPS22HB_CS_PORT, BSP_LPS22HB_CS_PIN, GPIO_PIN_SET);
-
-	GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-
-	GPIO_InitStruct.Pin = BSP_LSM6DSM_CS_PIN;
-	HAL_GPIO_Init(BSP_LSM6DSM_CS_PORT, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(BSP_LSM6DSM_CS_PORT, BSP_LSM6DSM_CS_PIN, GPIO_PIN_SET);
-
-	GPIO_InitStruct.Pin = BSP_LSM303AGR_X_CS_PIN;
-	HAL_GPIO_Init(BSP_LSM303AGR_X_CS_PORT, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(BSP_LSM303AGR_X_CS_PORT, BSP_LSM303AGR_X_CS_PIN,
-					  GPIO_PIN_SET);
-
-	GPIO_InitStruct.Pin = BSP_LSM303AGR_M_CS_PIN;
-	HAL_GPIO_Init(BSP_LSM303AGR_M_CS_PORT, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_SET);
-
-	GPIO_InitStruct.Pin = BSP_LPS22HB_CS_PIN;
-	HAL_GPIO_Init(BSP_LPS22HB_CS_PORT, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(BSP_LPS22HB_CS_PORT, BSP_LPS22HB_CS_PIN, GPIO_PIN_SET);
-
-	// setup SPI interface
-	if (BSP_SPI2_Init() == BSP_ERROR_NONE)
-	{
-		// XPRINTF("NO SPI Error\r\n");
-	}
-
-	// disable I2C modes on all SPI devices
-	// LSM303 Mag
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_RESET);
-	inData[0] = (0x62U);
-	BSP_SPI2_Send(inData, 1);
-	inData[0] = 0x20;
-	BSP_SPI2_Send(inData, 1);
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_SET);
-
-	// LSM303 Acc
-	HAL_GPIO_WritePin(BSP_LSM303AGR_X_CS_PORT, BSP_LSM303AGR_X_CS_PIN,
-					  GPIO_PIN_RESET);
-	inData[0] = (0x23U);
-	BSP_SPI2_Send(inData, 1);
-	inData[0] = 0x01;
-	BSP_SPI2_Send(inData, 1);
-	HAL_GPIO_WritePin(BSP_LSM303AGR_X_CS_PORT, BSP_LSM303AGR_X_CS_PIN,
-					  GPIO_PIN_SET);
-
-	// LPS22HB
-	HAL_GPIO_WritePin(BSP_LPS22HB_CS_PORT, BSP_LPS22HB_CS_PIN, GPIO_PIN_RESET);
-	inData[0] = (0x10U);
-	BSP_SPI2_Send(inData, 1);
-	inData[0] = 0x01;
-	BSP_SPI2_Send(inData, 1);
-	HAL_GPIO_WritePin(BSP_LPS22HB_CS_PORT, BSP_LPS22HB_CS_PIN, GPIO_PIN_SET);
-
-	// LSM6DSM
-	HAL_GPIO_WritePin(BSP_LSM6DSM_CS_PORT, BSP_LSM6DSM_CS_PIN, GPIO_PIN_RESET);
-	inData[0] = (0x12U);
-	BSP_SPI2_Send(inData, 1);
-	inData[0] = 0x0C;
-	BSP_SPI2_Send(inData, 1);
-	HAL_GPIO_WritePin(BSP_LSM6DSM_CS_PORT, BSP_LSM6DSM_CS_PIN, GPIO_PIN_SET);
-
-	return HAL_OK;
-}
-
-/**
- * @brief  Write register by SPI bus for LSM303AGR
- * @param  Reg the starting register address to be written
- * @param  pdata the pointer to the data to be written
- * @param  len the length of the data to be written
- * @retval BSP status
- */
-static int32_t BSP_LSM303AGR_WriteReg_Mag(uint16_t Reg, uint8_t *pdata,
-										  uint16_t len)
-{
-	int32_t ret = BSP_ERROR_NONE;
-	uint8_t dataReg = (uint8_t)Reg;
-
-	/* CS Enable */
-	LSM_MAG_CS_LOW();
-
-	if (BSP_SPI2_Send(&dataReg, 1) != 1)
-	{
-		ret = BSP_ERROR_UNKNOWN_FAILURE;
-	}
-
-	if (BSP_SPI2_Send(pdata, len) != len)
-	{
-		ret = BSP_ERROR_UNKNOWN_FAILURE;
-	}
-
-	/* CS Disable */
-	LSM_MAG_CS_HIGH();
-
-	return ret;
-}
-
-/**
- * @brief  Read register by SPI bus for LSM303AGR
- * @param  Reg the starting register address to be read
- * @param  pdata the pointer to the data to be read
- * @param  len the length of the data to be read
- * @retval BSP status
- */
-static int32_t BSP_LSM303AGR_ReadReg_Mag(uint16_t Reg, uint8_t *pdata,
-										 uint16_t len)
-{
-	int32_t ret = BSP_ERROR_NONE;
-	uint8_t dataReg = (uint8_t)Reg;
-
-	/* CS Enable */
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_RESET);
-	//  XPRINTF("Data Read = %d,%d\r\n",(dataReg) | 0x80,pdata[0]);
-	LSM303AGR_SPI_Write(&hbusspi2, (dataReg) | 0x80);
-	__HAL_SPI_DISABLE(&hbusspi2);
-	SPI_1LINE_RX(&hbusspi2);
-
-	if (len > 1)
-	{
-		LSM303AGR_SPI_Read_nBytes(&hbusspi2, (pdata), len);
-	}
-	else
-	{
-		LSM303AGR_SPI_Read(&hbusspi2, (pdata));
-	}
-
-	/* CS Disable */
-	HAL_GPIO_WritePin(BSP_LSM303AGR_M_CS_PORT, BSP_LSM303AGR_M_CS_PIN,
-					  GPIO_PIN_SET);
-	SPI_1LINE_TX(&hbusspi2);
-	__HAL_SPI_ENABLE(&hbusspi2);
-	return ret;
-}
-
-/**
- * @brief  Write register by SPI bus for LSM303AGR
- * @param  Reg the starting register address to be written
- * @param  pdata the pointer to the data to be written
- * @param  len the length of the data to be written
- * @retval BSP status
- */
-static int32_t BSP_LSM303AGR_WriteReg_Acc(uint16_t Reg, uint8_t *pdata,
-										  uint16_t len)
-{
-	int32_t ret = BSP_ERROR_NONE;
-	uint8_t dataReg = (uint8_t)Reg;
-
-	/* CS Enable */
-	LSM_ACC_CS_LOW();
-
-	if (BSP_SPI2_Send(&dataReg, 1) != 1)
-	{
-		ret = BSP_ERROR_UNKNOWN_FAILURE;
-	}
-
-	if (BSP_SPI2_Send(pdata, len) != len)
-	{
-		ret = BSP_ERROR_UNKNOWN_FAILURE;
-	}
-
-	/* CS Disable */
-	LSM_ACC_CS_HIGH();
-
-	return ret;
-}
-
-/**
- * @brief  Read register by SPI bus for LSM303AGR
- * @param  Reg the starting register address to be read
- * @param  pdata the pointer to the data to be read
- * @param  len the length of the data to be read
- * @retval BSP status
- */
-static int32_t BSP_LSM303AGR_ReadReg_Acc(uint16_t Reg, uint8_t *pdata,
-										 uint16_t len)
-{
-	int32_t ret = BSP_ERROR_NONE;
-	uint8_t dataReg = (uint8_t)Reg;
-
-	/* CS Enable */
-	LSM_ACC_CS_LOW();
-	if (len > 1)
-	{
-		LSM303AGR_SPI_Write(&hbusspi2, (dataReg) | 0x80 | 0x40);
-	}
-	else
-	{
-		LSM303AGR_SPI_Write(&hbusspi2, (dataReg) | 0x80);
-	}
-	__HAL_SPI_DISABLE(&hbusspi2);
-	SPI_1LINE_RX(&hbusspi2);
-
-	if (len > 1)
-	{
-		LSM303AGR_SPI_Read_nBytes(&hbusspi2, (pdata), len);
-	}
-	else
-	{
-		LSM303AGR_SPI_Read(&hbusspi2, (pdata));
-	}
-
-	/* CS Disable */
-	LSM_ACC_CS_HIGH();
-	SPI_1LINE_TX(&hbusspi2);
-	__HAL_SPI_ENABLE(&hbusspi2);
-	return ret;
-}
-
-/**
- * @brief  This function reads multiple bytes on SPI 3-wire.
- * @param  xSpiHandle: SPI Handler.
- * @param  val: value.
- * @param  nBytesToRead: number of bytes to read.
- * @retval None
- */
-void LSM303AGR_SPI_Read_nBytes(SPI_HandleTypeDef *xSpiHandle, uint8_t *val,
-							   uint16_t nBytesToRead)
-{
-	/* Interrupts should be disabled during this operation */
-	__disable_irq();
-	__HAL_SPI_ENABLE(xSpiHandle);
-
-	/* Transfer loop */
-	while (nBytesToRead > 1U)
-	{
-		/* Check the RXNE flag */
-		if (xSpiHandle->Instance->SR & SPI_FLAG_RXNE)
-		{
-			/* read the received data */
-			*val = *(__IO uint8_t *)&xSpiHandle->Instance->DR;
-			val += sizeof(uint8_t);
-			nBytesToRead--;
-		}
-	}
-	/* In master RX mode the clock is automaticaly generated on the SPI enable.
-	So to guarantee the clock generation for only one data, the clock must be
-	disabled after the first bit and before the latest bit of the last Byte
-	received */
-	/* __DSB instruction are inserted to garantee that clock is Disabled in the
-	 * right timeframe */
-
-	__DSB();
-	__DSB();
-	__HAL_SPI_DISABLE(xSpiHandle);
-
-	__enable_irq();
-
-	while ((xSpiHandle->Instance->SR & SPI_FLAG_RXNE) != SPI_FLAG_RXNE);
-	/* read the received data */
-	*val = *(__IO uint8_t *)&xSpiHandle->Instance->DR;
-	while ((xSpiHandle->Instance->SR & SPI_FLAG_BSY) == SPI_FLAG_BSY);
-}
-
-/**
- * @brief  This function send a command through SPI bus.
- * @param  command: command id.
- * @param  uint8_t val: value.
- * @retval None
- */
-void LSM303AGR_SPI_Read(SPI_HandleTypeDef *xSpiHandle, uint8_t *val)
-{
-	/* In master RX mode the clock is automaticaly generated on the SPI enable.
-	So to guarantee the clock generation for only one data, the clock must be
-	disabled after the first bit and before the latest bit */
-	/* Interrupts should be disabled during this operation */
-
-	__disable_irq();
-	__HAL_SPI_ENABLE(xSpiHandle);
-	__asm("dsb\n");
-	__asm("dsb\n");
-	__HAL_SPI_DISABLE(xSpiHandle);
-	__enable_irq();
-
-	while ((xSpiHandle->Instance->SR & SPI_FLAG_RXNE) != SPI_FLAG_RXNE);
-	/* read the received data */
-	//  XPRINTF("Before READ, %d,%d\r\n",val[0],xSpiHandle->Instance);
-	*val = *(__IO uint8_t *)&xSpiHandle->Instance->DR;
-	//  XPRINTF("READ, %d\r\n",val[0]);
-	while ((xSpiHandle->Instance->SR & SPI_FLAG_BSY) == SPI_FLAG_BSY);
-}
-
-/**
- * @brief  This function send a command through SPI bus.
- * @param  command : command id.
- * @param  val : value.
- * @retval None
- */
-void LSM303AGR_SPI_Write(SPI_HandleTypeDef *xSpiHandle, uint8_t val)
-{
-	/* check TXE flag */
-	while ((xSpiHandle->Instance->SR & SPI_FLAG_TXE) != SPI_FLAG_TXE);
-
-	/* Write the data */
-	*((__IO uint8_t *)&xSpiHandle->Instance->DR) = val;
-
-	/* Wait BSY flag */
-	while ((xSpiHandle->Instance->SR & SPI_FLAG_FTLVL) != SPI_FTLVL_EMPTY);
-	while ((xSpiHandle->Instance->SR & SPI_FLAG_BSY) == SPI_FLAG_BSY);
-}
 
 /**
  * @brief  Function for De-initializing timers:

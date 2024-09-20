@@ -11,7 +11,6 @@
 #include "bluenrg_l2cap_aci.h"
 #include "uuid_ble_service.h"
 
-
 /* Exported variables ---------------------------------------------------------*/
 int connected = FALSE;
 uint8_t set_connectable = TRUE;
@@ -178,34 +177,38 @@ fail:
  * @param  BSP_MOTION_SENSOR_Axes_t Mag Structure containing magneto value
  * @retval tBleStatus      Status
  */
-tBleStatus AccGyroMag_Update(BSP_MOTION_SENSOR_Axes_t *Acc,BSP_MOTION_SENSOR_Axes_t *Gyro,BSP_MOTION_SENSOR_Axes_t *Mag)
+extern tBleStatus AccGyroMag_Update(void *a, void *g, void *m)
 {  
+  AccelerometerData *Acc = (AccelerometerData*)a;
+  GyroscopeData *Gyro = (GyroscopeData*)g;
+  MagnetometerData *Mag = (MagnetometerData*)m;
+
   tBleStatus ret;
 
   uint8_t buff[2+3*3*2];
 
   STORE_LE_16(buff   ,(HAL_GetTick()>>3));
 
-  STORE_LE_16(buff+2 ,Acc->x);
-  STORE_LE_16(buff+4 ,Acc->y);
-  STORE_LE_16(buff+6 ,Acc->z);
+  STORE_LE_16(buff+2 ,Acc->x_acc);
+  STORE_LE_16(buff+4 ,Acc->y_acc);
+  STORE_LE_16(buff+6 ,Acc->z_acc);
 
 //  Gyro->x/=100;
 //  Gyro->y/=100;
 //  Gyro->z/=100;
 
-  STORE_LE_16(buff+8 ,Gyro->x*10);
-  STORE_LE_16(buff+10,Gyro->y*10);
-  STORE_LE_16(buff+12,Gyro->z);
+  STORE_LE_16(buff+8 ,Gyro->alpha_acc*10);
+  STORE_LE_16(buff+10,Gyro->beta_acc*10);
+  STORE_LE_16(buff+12,Gyro->gamma_acc);
 
   /* Apply Magneto calibration */
 //  x = Mag->x;// - MAG_Offset.x;
 //  y = Mag->y;// - MAG_Offset.y;
 //  z = Mag->z;// - MAG_Offset.z;
 
-  STORE_LE_16(buff+14,Mag->x);
-  STORE_LE_16(buff+16,Mag->y);
-  STORE_LE_16(buff+18,Mag->z);
+  STORE_LE_16(buff+14,Mag->mag_x);
+  STORE_LE_16(buff+16,Mag->mag_y);
+  STORE_LE_16(buff+18,Mag->mag_z);
 
   ret = ACI_GATT_UPDATE_CHAR_VALUE(HWServW2STHandle, AccGyroMagCharHandle, 0, 2+3*3*2, buff);
 
