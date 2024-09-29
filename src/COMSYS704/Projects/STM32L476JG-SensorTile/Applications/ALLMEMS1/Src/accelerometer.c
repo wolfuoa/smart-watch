@@ -34,22 +34,6 @@ void acc_init(AccelerometerData *ctx)
 	entry = 0x88;
 	BSP_LSM303AGR_WriteReg_Acc(0x21, &entry, 1);
 
-
-    //calibration to account for steady state error
-    int32_t sumx = 0;
-    int32_t sumy = 0;
-    int32_t sumz = 0;
-    float iters = 1000.0;
-    for (int i = 0; i < iters; i++) {
-        acc_read(ctx);
-        sumx += ctx->x_acc;
-        sumy += ctx->y_acc;
-        sumz += ctx->z_acc;
-    }
-    
-    xAccAvg = round(sumx / iters);
-    yAccAvg = round(sumy / iters);
-    zAccAvg = round(sumz / iters);
 }
 
 void acc_read(AccelerometerData * ctx)
@@ -114,12 +98,6 @@ void acc_read(AccelerometerData * ctx)
 		ctx->z_acc = outz;
 	}
 
-	// zero all axis at startup
-//	ctx->x_acc = ctx->x_acc - xAccAvg;
-//    ctx->y_acc = ctx->y_acc - yAccAvg;
-//	ctx->z_acc = ctx->z_acc - zAccAvg;
-
-	//	uint32_t magnitude_vector = (sqrt(ctx->x_acc^2 + ctx->y_acc^2 + ctx->z_acc^2));
 
 
 	XPRINTF("A=%d\t%d\t%d\t",ctx->x_acc,ctx->y_acc,ctx->z_acc);
