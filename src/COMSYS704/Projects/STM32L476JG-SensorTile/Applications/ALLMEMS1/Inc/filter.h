@@ -19,9 +19,11 @@ typedef struct FilterType_t
 {
 	uint16_t size;
 	int32_t *data;
+	int32_t mask;
 	int32_t average;
-	uint16_t count;
 	int32_t total;
+	uint16_t index;
+	uint16_t count;
 
 } FilterType;
 
@@ -29,7 +31,7 @@ typedef struct FilterType_t
 
 // --------- Public Function Declarations ---------
 
-FilterType filter_init(uint16_t size);
+void filter_init(FilterType *filter, uint16_t size);
 void filter_free(FilterType *filter);
 void filter_push(FilterType *filter, int32_t entry);
 

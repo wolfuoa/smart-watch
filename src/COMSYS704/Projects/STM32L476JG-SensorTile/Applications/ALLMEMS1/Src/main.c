@@ -44,6 +44,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "spi.h"
+#include "filter.h"
 
 #include <limits.h>
 #include <math.h>
