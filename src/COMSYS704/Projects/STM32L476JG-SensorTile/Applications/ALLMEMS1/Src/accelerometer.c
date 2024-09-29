@@ -20,7 +20,7 @@ extern SPI_HandleTypeDef hbusspi2;
 static int32_t BSP_LSM303AGR_WriteReg_Acc(uint16_t Reg, uint8_t *pdata, uint16_t len);
 static int32_t BSP_LSM303AGR_ReadReg_Acc(uint16_t Reg, uint8_t *pdata, uint16_t len);
 
-void acc_init(AccelerometerData *ctx)
+void acc_init()
 {
 	uint8_t entry;
 

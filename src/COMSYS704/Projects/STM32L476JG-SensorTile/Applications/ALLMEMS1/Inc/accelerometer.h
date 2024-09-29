@@ -26,7 +26,7 @@ typedef struct AccelerometerData_t
 
 // --------- Public Function Declarations ---------
 
-void acc_init(AccelerometerData *ctx);
+void acc_init();
 void acc_read(AccelerometerData *ctx);
 
 // ------------------------------------------------
