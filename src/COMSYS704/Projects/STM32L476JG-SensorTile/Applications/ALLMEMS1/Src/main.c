@@ -119,6 +119,8 @@ GyroscopeData current_gyroscope;
 COMP_Data COMP_Value;
 BSP_MOTION_SENSOR_Axes_t MAG_Value;
 
+FilterType acc_z_filter;
+
 
 
 /* Variables that have been added for the project ----------------------------*/
@@ -200,6 +202,15 @@ int main(void)
 	acc_init(&current_accelerometer);
 	gyro_init();
 
+	// ---------------- Filter Initialization ----------------
+
+	
+	filter_init(&acc_z_filter, 4);
+	// filter_init(acc_y_filter, 8);
+	// filter_init(acc_x_filter, 8);
+
+	// -------------------------------------------------------
+
 
 	uint8_t BufferToWrite[10] = "ABCDE";
 	//***************************************************
@@ -254,6 +265,9 @@ int main(void)
 
 			//*********process sensor data*********
 
+			filter_push(&acc_z_filter, current_accelerometer.z_acc);
+			XPRINTF("Current Z Average : %d \r\n", acc_z_filter.average);
+
 			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
@@ -274,6 +288,9 @@ int main(void)
 		/* Wait for Event */
 		__WFI();
 	}
+
+	filter_free(&acc_z_filter);
+
 }
 
 /**
@@ -385,6 +402,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  */
 static void SendMotionData(void)
 {
+	current_accelerometer.x_acc = current_accelerometer.z_acc;
+	current_accelerometer.z_acc = acc_z_filter.average;
+	current_accelerometer.y_acc = 0;
 	AccGyroMag_Update(&current_accelerometer, &current_gyroscope, &current_magnetometer);
 }
 

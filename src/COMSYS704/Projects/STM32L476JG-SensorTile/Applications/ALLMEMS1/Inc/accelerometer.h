@@ -17,9 +17,9 @@
 
 typedef struct AccelerometerData_t
 {
-    uint32_t x_acc;
-    uint32_t y_acc;
-    uint32_t z_acc;
+    int32_t x_acc;
+    int32_t y_acc;
+    int32_t z_acc;
 } AccelerometerData;
 
 // ------------------------------------------------
