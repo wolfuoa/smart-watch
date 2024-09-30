@@ -19,11 +19,11 @@ void filter_push(FilterType *filter, int32_t entry)
 	if(filter->count < filter->size)
 		filter->count++;
 
-	filter->total += entry - filter.data[filter.index];
+	filter->total += entry - filter->data[filter->index];
 
-	filter.data[filter.index] = entry;
+	filter->data[filter->index] = entry;
 
-	filter->index = (filter->index + 1) & filter.mask;
+	filter->index = (filter->index + 1) & filter->mask;
 
 	filter->average = filter->total / filter->count;
 }
