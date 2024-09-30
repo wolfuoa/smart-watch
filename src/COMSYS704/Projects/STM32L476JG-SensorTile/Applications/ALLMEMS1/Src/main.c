@@ -116,6 +116,13 @@ AccelerometerData current_accelerometer;
 MagnetometerData current_magnetometer;
 GyroscopeData current_gyroscope;
 COMP_Data COMP_Value;
+BSP_MOTION_SENSOR_Axes_t MAG_Value;
+
+
+
+/* Variables that have been added for the project ----------------------------*/
+
+
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 
@@ -128,6 +135,19 @@ static void SendMotionData(void);
 static void InitTargetPlatform(void);
 
 void MX_UART5_UART_Init();
+
+void printFloatsAsInts(float x, float y, float z) {
+    int xInt = (int)x; // Extract the integer
+    int xFrac = (int)((x - xInt) * 10000); // Extract fractional with 4dp
+
+    int yInt = (int)y;
+    int yFrac = (int)((y - yInt) * 10000);
+
+    int zInt = (int)z;
+    int zFrac = (int)((z - zInt) * 10000);
+
+    XPRINTF("Accel=%d.%04d,%d.%04d,%d.%04d", xInt, xFrac, yInt, yFrac, zInt, zFrac);
+}
 
 /**
  * @brief  Main program
@@ -176,7 +196,7 @@ int main(void)
 	NodeName[7] = 'M';
 
 	mag_init();
-	acc_init();
+	acc_init(&current_accelerometer);
 	gyro_init();
 
 
@@ -233,11 +253,11 @@ int main(void)
 
 			//*********process sensor data*********
 
-			COMP_Value.Steps++;
+			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
 
-			XPRINTF("Steps = %d \r\n", (int)COMP_Value.Steps);
+			//XPRINTF("Steps = %d \r\n", (int)COMP_Value.Steps);
 		}
 
 		//***************************************************
@@ -355,6 +375,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
+
+
 /**
  * @brief  Send Motion Data Acc/Mag/Gyro to BLE
  * @param  None
@@ -412,6 +434,7 @@ static void InitTimers(void)
 		/* Initialization Error */
 		Error_Handler();
 	}
+
 
 	/* Configure the Output Compare channels */
 	/* Common configuration for all channels */
