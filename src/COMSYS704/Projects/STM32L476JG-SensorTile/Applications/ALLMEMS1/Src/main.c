@@ -205,7 +205,7 @@ int main(void)
 	// ---------------- Filter Initialization ----------------
 
 	
-	filter_init(&acc_z_filter, 4);
+	filter_init(&acc_z_filter, 16);
 	// filter_init(acc_y_filter, 8);
 	// filter_init(acc_x_filter, 8);
 
@@ -221,6 +221,10 @@ int main(void)
 	/* Infinite loop */
 	while (1)
 	{
+
+		static int32_t previous_value = 0;
+
+
 		if (!connected)
 		{
 			if (!(HAL_GetTick() & 0x3FF))
@@ -265,8 +269,27 @@ int main(void)
 
 			//*********process sensor data*********
 
-			filter_push(&acc_z_filter, current_accelerometer.z_acc);
+			int32_t sum = abs(current_accelerometer.x_acc) + abs(current_accelerometer.y_acc) + abs(current_accelerometer.z_acc);
+
+			filter_push(&acc_z_filter, sum);
 			XPRINTF("Current Z Average : %d \r\n", acc_z_filter.average);
+
+			// ---------------- ALGORITHM ----------------
+			int32_t current_value = acc_z_filter.average;
+
+			// if((current_value < previous_value) && previous_value >= 2000)
+			// {
+			// 	uint8_t peak_threshold = 1;
+			// }
+
+			// if()
+
+			previous_value = current_value;
+			// -------------------------------------------
+
+			current_accelerometer.x_acc = 0;
+			current_accelerometer.z_acc = acc_z_filter.average;
+			current_accelerometer.y_acc = 0;
 
 			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;
@@ -402,9 +425,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  */
 static void SendMotionData(void)
 {
-	current_accelerometer.x_acc = current_accelerometer.z_acc;
-	current_accelerometer.z_acc = acc_z_filter.average;
-	current_accelerometer.y_acc = 0;
 	AccGyroMag_Update(&current_accelerometer, &current_gyroscope, &current_magnetometer);
 }
 
@@ -432,7 +452,7 @@ static void InitTimers(void)
 	/* Set TIM4 instance ( Environmental ) */
 	TimEnvHandle.Instance = TIM4;
 	/* Initialize TIM4 peripheral */
-	TimEnvHandle.Init.Period = 655;
+	TimEnvHandle.Init.Period = 65;
 	TimEnvHandle.Init.Prescaler = uwPrescalerValue;
 	TimEnvHandle.Init.ClockDivision = 0;
 	TimEnvHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
