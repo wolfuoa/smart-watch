@@ -45,6 +45,7 @@
 #include "main.h"
 #include "spi.h"
 #include "filter.h"
+#include "step_metrics.h"
 
 #include <limits.h>
 #include <math.h>
@@ -120,6 +121,7 @@ COMP_Data COMP_Value;
 BSP_MOTION_SENSOR_Axes_t MAG_Value;
 
 FilterType acc_z_filter;
+MetricsType metrics;
 
 
 
@@ -204,10 +206,15 @@ int main(void)
 
 	// ---------------- Filter Initialization ----------------
 
-	
 	filter_init(&acc_z_filter, 16);
 	// filter_init(acc_y_filter, 8);
 	// filter_init(acc_x_filter, 8);
+
+	// -------------------------------------------------------
+
+	// ------------- Step Metrics Initialization -------------
+
+	metrics_buffer_init(&metrics, 16);
 
 	// -------------------------------------------------------
 
@@ -272,22 +279,15 @@ int main(void)
 			int32_t sum = abs(current_accelerometer.x_acc) + abs(current_accelerometer.y_acc) + abs(current_accelerometer.z_acc);
 
 			filter_push(&acc_z_filter, sum);
+			metrics_buffer_push(&metrics, acc_z_filter.average);
 			XPRINTF("Current Z Average : %d \r\n", acc_z_filter.average);
 
-			// ---------------- ALGORITHM ----------------
-			int32_t current_value = acc_z_filter.average;
+			if(metrics.step_detected == 1)
+			{
+				COMP_Value.Steps++;
+			}
 
-			// if((current_value < previous_value) && previous_value >= 2000)
-			// {
-			// 	uint8_t peak_threshold = 1;
-			// }
-
-			// if()
-
-			previous_value = current_value;
-			// -------------------------------------------
-
-			current_accelerometer.x_acc = 0;
+			current_accelerometer.x_acc = COMP_Value.Steps;
 			current_accelerometer.z_acc = acc_z_filter.average;
 			current_accelerometer.y_acc = 0;
 
@@ -295,7 +295,7 @@ int main(void)
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
 
-			//XPRINTF("Steps = %d \r\n", (int)COMP_Value.Steps);
+			XPRINTF("\n\n\nSteps = %d \r\n\n\n", (int)COMP_Value.Steps);
 		}
 
 		//***************************************************

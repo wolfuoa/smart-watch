@@ -12,7 +12,6 @@ void filter_init(FilterType *filter, uint16_t size)
 	filter->average = 0;
 }
 
-
 void filter_push(FilterType *filter, int32_t entry)
 {
 	if(filter->count < filter->size)
