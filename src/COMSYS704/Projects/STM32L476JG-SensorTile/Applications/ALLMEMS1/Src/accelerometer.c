@@ -9,7 +9,6 @@
 #define LSM_ACC_CS_HIGH()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
 
 // ---------------- Private Variables ----------------
-int32_t maxAccZ = 0;
 // ---------------------------------------------------
 
 extern SPI_HandleTypeDef hbusspi2;
