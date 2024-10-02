@@ -277,14 +277,16 @@ int main(void)
 			//*********process sensor data*********
 
 			int32_t sum = abs(current_accelerometer.x_acc) + abs(current_accelerometer.y_acc) + abs(current_accelerometer.z_acc);
-
 			filter_push(&acc_z_filter, sum);
+
 			metrics_buffer_push(&metrics, acc_z_filter.average);
-			XPRINTF("Current Z Average : %d \r\n", acc_z_filter.average);
+			metrics_counter(&metrics);
+			
 
 			if(metrics.step_detected == 1)
 			{
 				COMP_Value.Steps++;
+				metrics.step_detected = 0;
 			}
 
 			current_accelerometer.x_acc = COMP_Value.Steps;
@@ -295,7 +297,9 @@ int main(void)
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
 
-			XPRINTF("\n\n\nSteps = %d \r\n\n\n", (int)COMP_Value.Steps);
+			XPRINTF("Zavg: %d, steps: %d \r\n", acc_z_filter.average, COMP_Value.Steps);
+
+			// XPRINTF("\n\n\nSteps = %d \r\n\n\n", (int)COMP_Value.Steps);
 		}
 
 		//***************************************************

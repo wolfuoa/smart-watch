@@ -99,7 +99,7 @@ void acc_read(AccelerometerData * ctx)
 
 
 
-	XPRINTF("A=%d\t%d\t%d\t",ctx->x_acc,ctx->y_acc,ctx->z_acc);
+	// XPRINTF("A=%d\t%d\t%d\t",ctx->x_acc,ctx->y_acc,ctx->z_acc);
 }
 
 /**

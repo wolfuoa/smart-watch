@@ -126,14 +126,14 @@ void mag_read(MagnetometerData * ctx)
 	ctx->mag_y = outy * 1.5;
 	ctx->mag_z = outz * 1.5;
 
-	XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
+	// XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
 }
 
 double mag_angle(MagnetometerData *ctx)
 {
 	double angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
-	XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
+	// XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
 
 	return angle;
 }
