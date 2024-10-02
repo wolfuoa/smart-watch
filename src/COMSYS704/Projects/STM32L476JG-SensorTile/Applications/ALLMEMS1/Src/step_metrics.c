@@ -24,31 +24,45 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
     metrics->center = (metrics->center + 1) % metrics->size;
 
     // ---------------- Step Counting Algorithm ----------------
-    uint8_t local_max_detected = 0;
-    int32_t max = 0;
-    uint16_t max_index = 0;
 
-    for (uint16_t i = 0; i < metrics->size; ++i)
+    if(looking_for_max)
     {
-        if (metrics->data[i] > max)
-        {
-            max = metrics->data[i];
-            max_index = i;
-        }
-    }
+    	int32_t max = 0;
+    	uint16_t max_index = 0;
 
-    if (max_index == metrics->center)
-    {
-        local_max_detected = 1;
-    }
+    	for (uint16_t i = 0; i < metrics->size; ++i)
+    	{
+    	    if (metrics->data[i] > max)
+    	    {
+    	        max = metrics->data[i];
+    	        max_index = i;
+    	    }
+    	}
 
-    if(local_max_detected && max >= metrics->dynamic_threshold)
-    {
-        metrics->step_detected = 1;
+    	if ((max_index == metrics->center) && (max >= metrics->dynamic_threshold))
+		{
+			looking_for_max = 0;
+		}
     }
     else
     {
-        metrics->step_detected = 0;
+		int32_t min = inf;
+		uint16_t min_index = 0;
+
+		for (uint16_t i = 0; i < metrics->size; ++i)
+		{
+			if (metrics->data[i] < min)
+			{
+				min = metrics->data[i];
+				min_index = i;
+			}
+		}
+
+		if (min_index == metrics->center)
+		{
+			looking_for_max = 0;
+
+		}
     }
 
 
