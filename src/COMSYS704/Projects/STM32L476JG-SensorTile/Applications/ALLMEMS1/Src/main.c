@@ -44,6 +44,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "spi.h"
+#include "filter.h"
+#include "step_metrics.h"
 
 #include <limits.h>
 #include <math.h>
@@ -117,6 +119,9 @@ MagnetometerData current_magnetometer;
 GyroscopeData current_gyroscope;
 COMP_Data COMP_Value;
 BSP_MOTION_SENSOR_Axes_t MAG_Value;
+
+FilterType acc_z_filter;
+MetricsType metrics;
 
 
 
@@ -199,6 +204,20 @@ int main(void)
 	acc_init(&current_accelerometer);
 	gyro_init();
 
+	// ---------------- Filter Initialization ----------------
+
+	filter_init(&acc_z_filter, 16);
+	// filter_init(acc_y_filter, 8);
+	// filter_init(acc_x_filter, 8);
+
+	// -------------------------------------------------------
+
+	// ------------- Step Metrics Initialization -------------
+
+	metrics_buffer_init(&metrics, 16);
+
+	// -------------------------------------------------------
+
 
 	uint8_t BufferToWrite[10] = "ABCDE";
 	//***************************************************
@@ -209,6 +228,10 @@ int main(void)
 	/* Infinite loop */
 	while (1)
 	{
+
+		static int32_t previous_value = 0;
+
+
 		if (!connected)
 		{
 			if (!(HAL_GetTick() & 0x3FF))
@@ -253,11 +276,26 @@ int main(void)
 
 			//*********process sensor data*********
 
+			int32_t sum = abs(current_accelerometer.x_acc) + abs(current_accelerometer.y_acc) + abs(current_accelerometer.z_acc);
+
+			filter_push(&acc_z_filter, sum);
+			metrics_buffer_push(&metrics, acc_z_filter.average);
+			XPRINTF("Current Z Average : %d \r\n", acc_z_filter.average);
+
+			if(metrics.step_detected == 1)
+			{
+				COMP_Value.Steps++;
+			}
+
+			current_accelerometer.x_acc = COMP_Value.Steps;
+			current_accelerometer.z_acc = acc_z_filter.average;
+			current_accelerometer.y_acc = 0;
+
 			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
 
-			//XPRINTF("Steps = %d \r\n", (int)COMP_Value.Steps);
+			XPRINTF("\n\n\nSteps = %d \r\n\n\n", (int)COMP_Value.Steps);
 		}
 
 		//***************************************************
@@ -273,6 +311,9 @@ int main(void)
 		/* Wait for Event */
 		__WFI();
 	}
+
+	filter_free(&acc_z_filter);
+
 }
 
 /**
@@ -351,7 +392,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	uint32_t uhCapture = 0;
 
-	/* TIM1_CH4 toggling with frequency = 20 Hz */
+	/* TIM1_CH4 toggling with frequency = 100 Hz */
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4)
 	{
 		uhCapture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_4);
@@ -411,7 +452,7 @@ static void InitTimers(void)
 	/* Set TIM4 instance ( Environmental ) */
 	TimEnvHandle.Instance = TIM4;
 	/* Initialize TIM4 peripheral */
-	TimEnvHandle.Init.Period = 655;
+	TimEnvHandle.Init.Period = 100;
 	TimEnvHandle.Init.Prescaler = uwPrescalerValue;
 	TimEnvHandle.Init.ClockDivision = 0;
 	TimEnvHandle.Init.CounterMode = TIM_COUNTERMODE_UP;

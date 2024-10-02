@@ -9,10 +9,6 @@
 #define LSM_ACC_CS_HIGH()					 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
 
 // ---------------- Private Variables ----------------
-int32_t xAccAvg = 0;
-int32_t yAccAvg = 0;
-int32_t zAccAvg = 0;
-int32_t maxAccZ = 0;
 // ---------------------------------------------------
 
 extern SPI_HandleTypeDef hbusspi2;
@@ -33,6 +29,9 @@ void acc_init()
 	// Configure high pass filter 10001000
 	entry = 0x88;
 	BSP_LSM303AGR_WriteReg_Acc(0x21, &entry, 1);
+
+
+	// Write CTRL_REG1_A = 57h // Accel = 100 Hz (normal mode)
 
 }
 
