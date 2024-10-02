@@ -30,9 +30,9 @@ typedef struct MetricsType_t
 
 // --------- Public Function Declarations ---------
 
-void metrics_buffer_init(MetricsType *filter, uint16_t size);
-void metrics_buffer_free(MetricsType *filter);
-void metrics_buffer_push(MetricsType *filter, int32_t entry);
+void metrics_buffer_init(MetricsType *metrics, uint16_t size);
+void metrics_buffer_free(MetricsType *metrics);
+void metrics_buffer_push(MetricsType *metrics, int32_t entry);
 
 // ------------------------------------------------
 

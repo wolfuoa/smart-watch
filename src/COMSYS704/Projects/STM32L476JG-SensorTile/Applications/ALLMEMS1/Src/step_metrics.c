@@ -1,6 +1,6 @@
 #include "step_metrics.h"
 
-#define DYNAMIC_THRESHOLD_DEFAULT_VALUE 2000
+#define DYNAMIC_THRESHOLD_DEFAULT_VALUE 1000U
 
 uint8_t looking_for_max = 1;
 
