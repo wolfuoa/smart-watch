@@ -392,7 +392,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	uint32_t uhCapture = 0;
 
-	/* TIM1_CH4 toggling with frequency = 20 Hz */
+	/* TIM1_CH4 toggling with frequency = 100 Hz */
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4)
 	{
 		uhCapture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_4);
@@ -452,7 +452,7 @@ static void InitTimers(void)
 	/* Set TIM4 instance ( Environmental ) */
 	TimEnvHandle.Instance = TIM4;
 	/* Initialize TIM4 peripheral */
-	TimEnvHandle.Init.Period = 65;
+	TimEnvHandle.Init.Period = 100;
 	TimEnvHandle.Init.Prescaler = uwPrescalerValue;
 	TimEnvHandle.Init.ClockDivision = 0;
 	TimEnvHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
