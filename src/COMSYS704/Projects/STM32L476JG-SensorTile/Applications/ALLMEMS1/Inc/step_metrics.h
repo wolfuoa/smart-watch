@@ -13,6 +13,7 @@
 
 
 #include <stdint.h>
+#include "filter.h"
 
 // ---------------- Public Typedef ----------------
 
@@ -23,9 +24,10 @@ typedef struct MetricsType_t
 	uint16_t index;
     uint16_t center;
     uint8_t step_detected;
-    int32_t dynamic_threshold;
+    FilterType *high_threshold_filter;
+	FilterType *low_threshold_filter;
+	FilterType *frequency_filter;
     uint16_t counter;
-//    int32_t step_history;
 
 } MetricsType;
 
@@ -41,24 +43,3 @@ void metrics_counter(MetricsType *metrics);
 // ------------------------------------------------
 
 #endif	// STEP_METRICS_H
-
-
-
-#ifndef VECTOR_H
-#define VECTOR_H
-
-#define VECTOR_INITIAL_LIMIT 5
-
-typedef struct Vector
-{
-    void** data;
-    int limit;
-    int count;
-    void (*push_back)(struct Vector*, void*);
-    void (*fast_remove)(struct Vector*, int);
-    void (*free)(struct Vector*);
-} Vector;
-
-void VectorInit(Vector* vector);
-
-#endif

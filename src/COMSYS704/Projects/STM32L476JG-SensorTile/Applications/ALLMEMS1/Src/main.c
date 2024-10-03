@@ -297,7 +297,8 @@ int main(void)
 			COMP_Value.Heading += 5;
 			COMP_Value.Distance += 10;
 
-			XPRINTF("Zavg: %d, steps: %d \r\n", acc_z_filter.average, COMP_Value.Steps);
+			// XPRINTF("Zavg: %d, steps: %d \r\n", acc_z_filter.average, COMP_Value.Steps);
+			XPRINTF("\r\n")
 
 			// XPRINTF("\n\n\nSteps = %d \r\n\n\n", (int)COMP_Value.Steps);
 		}

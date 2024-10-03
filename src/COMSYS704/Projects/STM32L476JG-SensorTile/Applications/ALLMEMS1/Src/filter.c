@@ -30,3 +30,11 @@ void filter_free(FilterType *filter)
 {
 	free(filter->data);
 }
+
+void filter_flush(FilterType *filter)
+{
+	for (int i = 0; i < filter->size; ++i)
+	{
+		filter->data[i] = 0;
+	}
+}
