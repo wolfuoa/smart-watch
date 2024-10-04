@@ -133,8 +133,9 @@ double mag_angle(MagnetometerData *ctx)
 {
 	double angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
-	// XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
+	angle = (angle < 0) ? angle + 360 : angle;
 
+	XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
 	return angle;
 }
 

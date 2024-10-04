@@ -59,7 +59,7 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
     if(looking_for_max)
     {
 		metrics->debug = 0;
-		XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for peak\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
+		// XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for peak\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
 
     	max = 0;
     	uint16_t max_index = metrics->index;
@@ -90,7 +90,7 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
     {
 		metrics->debug = 1;
 		int temp = (max - min);
-		XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for trough\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
+		// XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for trough\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
 
 		min = 0x7FFFFFFF;
 		uint16_t min_index = metrics->index;
@@ -152,5 +152,5 @@ void metrics_buffer_free(MetricsType *metrics)
 void metrics_counter(MetricsType *metrics)
 {
 	metrics->counter++;
-	XPRINTF("Curr metrics_count: %d \t", metrics->counter);
+	// XPRINTF("Curr metrics_count: %d \t", metrics->counter);
 }
