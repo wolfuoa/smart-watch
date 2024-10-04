@@ -214,7 +214,7 @@ int main(void)
 
 	// ------------- Step Metrics Initialization -------------
 
-	metrics_buffer_init(&metrics, 16);
+	metrics_buffer_init(&metrics, 24);
 
 	// -------------------------------------------------------
 
