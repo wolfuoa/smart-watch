@@ -37,4 +37,10 @@ void filter_flush(FilterType *filter)
 	{
 		filter->data[i] = 0;
 	}
+
+	filter->count = 0;
+	filter->total = 0;
+	filter->index = 0;
+	filter->average = 0;
+	
 }

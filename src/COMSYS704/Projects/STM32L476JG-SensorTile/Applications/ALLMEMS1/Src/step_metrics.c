@@ -7,13 +7,13 @@
 #include "spi.h"
 #include "ALLMEMS1_config.h"
 
-#define DYNAMIC_THRESHOLD_DEFAULT_VALUE_HIGH 1000U
-#define DYNAMIC_THRESHOLD_DEFAULT_VALUE_LOW 500U
-#define AVERAGE_FREQUENCY_DEFAULT_COUNTS 10U
-#define TROUGH_SEARCH_TIMEOUT_MS 2000U
-#define MIN_MAX_OFFSET 250U
-#define ACC_SAMPLING_FREQ_HZ 10U
-#define PEAK_TO_PEAK_THRESHOLD 600U
+#define DYNAMIC_THRESHOLD_DEFAULT_VALUE_HIGH 1000
+#define DYNAMIC_THRESHOLD_DEFAULT_VALUE_LOW 500
+#define AVERAGE_FREQUENCY_DEFAULT_COUNTS 100
+#define TROUGH_SEARCH_TIMEOUT_MS 2000
+#define MIN_MAX_OFFSET 800
+#define ACC_SAMPLING_FREQ_HZ 10
+#define PEAK_TO_PEAK_THRESHOLD 300
 
 uint8_t looking_for_max = 1;
 int32_t min;
@@ -42,6 +42,7 @@ void metrics_buffer_init(MetricsType *metrics, uint16_t size)
 	metrics->high_threshold_filter = high_threshold_filter;
 	metrics->low_threshold_filter = low_threshold_filter;
 	metrics->frequency_filter = frequency_filter;
+	metrics->debug = 0;
 }
 
 void metrics_buffer_push(MetricsType *metrics, int32_t entry)
@@ -55,10 +56,11 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 
     if(looking_for_max)
     {
-		XPRINTF("low thresh: %d\t high thresh: %d \t looking for peak\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average)
+		metrics->debug = 0;
+		XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for peak\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
 
     	max = 0;
-    	uint16_t max_index = 0;
+    	uint16_t max_index = metrics->index;
 
     	for (uint16_t i = 0; i < metrics->size; ++i)
     	{
@@ -74,7 +76,7 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 			XPRINTF("Peak detected\t")
 			filter_push(metrics->high_threshold_filter, max);
 			
-			if (max >= metrics->high_threshold_filter->average - MIN_MAX_OFFSET)
+			if ((max >= metrics->high_threshold_filter->average - MIN_MAX_OFFSET) && (max >= 500))
 			{
 				looking_for_max = 0;
 				metrics->counter = 0;
@@ -84,11 +86,12 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
     }
     else
     {
+		metrics->debug = 1;
 		int temp = (max - min);
-		XPRINTF("low thresh: %d\t high thresh: %d \t looking for trough\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average)
+		XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for trough\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
 
 		min = 0x7FFFFFFF;
-		uint16_t min_index = 0;
+		uint16_t min_index = metrics->index;
 
 		for (uint16_t i = 0; i < metrics->size; ++i)
 		{
@@ -107,6 +110,7 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 
 			if((min <= metrics->low_threshold_filter->average + MIN_MAX_OFFSET) && ((max - min) > PEAK_TO_PEAK_THRESHOLD))
 			{
+				XPRINTF("STEP DETECTED \t")
 				looking_for_max = 1;
 				metrics->step_detected = 1;
 				filter_push(metrics->frequency_filter, metrics->counter);
@@ -115,7 +119,7 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 		}
 
 		// If no trough is detected, start looking for peak again
-		if(metrics->frequency_filter->average > TROUGH_SEARCH_TIMEOUT_MS/ACC_SAMPLING_FREQ_HZ)  
+		if(metrics->counter > TROUGH_SEARCH_TIMEOUT_MS/ACC_SAMPLING_FREQ_HZ)  
 		{
 			looking_for_max = 1;
 			XPRINTF("reset Peak\t")

@@ -28,6 +28,7 @@ typedef struct MetricsType_t
 	FilterType *low_threshold_filter;
 	FilterType *frequency_filter;
     uint16_t counter;
+	int32_t debug;
 
 } MetricsType;
 

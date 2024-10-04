@@ -206,7 +206,7 @@ int main(void)
 
 	// ---------------- Filter Initialization ----------------
 
-	filter_init(&acc_z_filter, 16);
+	filter_init(&acc_z_filter, 32);
 	// filter_init(acc_y_filter, 8);
 	// filter_init(acc_x_filter, 8);
 
@@ -289,9 +289,9 @@ int main(void)
 				metrics.step_detected = 0;
 			}
 
-			current_accelerometer.x_acc = COMP_Value.Steps;
+			current_accelerometer.x_acc = (metrics.debug == 0) ? 1500 : 0;
 			current_accelerometer.z_acc = acc_z_filter.average;
-			current_accelerometer.y_acc = 0;
+			current_accelerometer.y_acc = COMP_Value.Steps;
 
 			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;
