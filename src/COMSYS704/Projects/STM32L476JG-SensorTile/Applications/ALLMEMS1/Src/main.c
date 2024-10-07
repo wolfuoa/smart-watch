@@ -218,6 +218,13 @@ int main(void)
 
 	// -------------------------------------------------------
 
+	// --------------------- Calibration ---------------------
+
+	mag_read(&current_magnetometer);
+	mag_calibrate(mag_angle(&current_magnetometer));
+
+	// -------------------------------------------------------
+
 
 	uint8_t BufferToWrite[10] = "ABCDE";
 	//***************************************************
@@ -290,8 +297,12 @@ int main(void)
 			}
 
 			current_accelerometer.x_acc = (metrics.debug == 0) ? 1500 : 0;
-			current_accelerometer.z_acc = acc_z_filter.average;
 			current_accelerometer.y_acc = COMP_Value.Steps;
+		    current_accelerometer.z_acc = acc_z_filter.average;
+
+//			current_accelerometer.x_acc = (int32_t)angle;
+//			current_accelerometer.z_acc = current_magnetometer.mag_x;
+//			current_accelerometer.y_acc = current_magnetometer.mag_y;
 
 			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;

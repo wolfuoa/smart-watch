@@ -29,6 +29,7 @@ typedef struct MagnetometerData_t
 void mag_init();
 void mag_read(MagnetometerData *ctx);
 double mag_angle(MagnetometerData *ctx);
+void mag_calibrate(double angle);
 
 // ------------------------------------------------
 

@@ -9,6 +9,8 @@
 #define LSM_MAG_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
 #define PI 3.1415926F
 
+double calibration_angle = 0.0;
+
 extern SPI_HandleTypeDef hbusspi2;
 
 static int32_t BSP_LSM303AGR_WriteReg_Mag(uint16_t Reg, uint8_t *pdata,  uint16_t len);
@@ -51,11 +53,11 @@ void mag_init()
 	 *
 	 ** current config
 	 *
-	 * 0b00000000
+	 * 0b00000010
 	 *
 	 */
 
-	entry = 0x00U;
+	entry = 0x02U;
 	BSP_LSM303AGR_WriteReg_Mag(0x61U, &entry, 1);
 
 	// ----------------------------------------------------
@@ -126,17 +128,24 @@ void mag_read(MagnetometerData * ctx)
 	ctx->mag_y = outy * 1.5;
 	ctx->mag_z = outz * 1.5;
 
-	// XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
+	XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
 }
 
 double mag_angle(MagnetometerData *ctx)
 {
 	double angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
+	angle -= calibration_angle;
+
 	angle = (angle < 0) ? angle + 360 : angle;
 
 	XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
 	return angle;
+}
+
+void mag_calibrate(double angle)
+{
+	calibration_angle = angle;
 }
 
 /**
