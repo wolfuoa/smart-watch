@@ -59,6 +59,7 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
     if(looking_for_max)
     {
 		metrics->debug = 0;
+
 		// XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for peak\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
 
     	max = 0;

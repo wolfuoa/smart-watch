@@ -9,7 +9,7 @@
 #define LSM_MAG_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
 #define PI 3.1415926F
 
-double calibration_angle = 0.0;
+volatile int32_t calibration_angle = 0;
 
 extern SPI_HandleTypeDef hbusspi2;
 
@@ -124,27 +124,32 @@ void mag_read(MagnetometerData * ctx)
 	if(negative)
 		outz = (outz | ~((1 << 15) -1));
 
-	ctx->mag_x = outx * 1.5;
-	ctx->mag_y = outy * 1.5;
+	// x : 650 - -125
+	// y : 425 - -325
+
+	ctx->mag_x = (outx * 1.5) - 250;
+	ctx->mag_y = (outy * 1.5) - 25;
 	ctx->mag_z = outz * 1.5;
 
 	XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
 }
 
-double mag_angle(MagnetometerData *ctx)
+int32_t mag_angle(MagnetometerData *ctx)
 {
-	double angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
+	int32_t angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
 	angle -= calibration_angle;
 
 	angle = (angle < 0) ? angle + 360 : angle;
 
-	XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
+	XPRINTF("Azimuth wrt magnetic North: %d \t Calibration: %d \t real angle: %d\r\n", (int)angle, (int)calibration_angle, (int)(angle + calibration_angle));
 	return angle;
 }
 
-void mag_calibrate(double angle)
+void mag_calibrate(MagnetometerData *ctx)
 {
+	int32_t angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
+
 	calibration_angle = angle;
 }
 

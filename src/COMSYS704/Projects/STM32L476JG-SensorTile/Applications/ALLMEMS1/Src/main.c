@@ -220,8 +220,10 @@ int main(void)
 
 	// --------------------- Calibration ---------------------
 
+	HAL_Delay(1000);
+
 	mag_read(&current_magnetometer);
-	mag_calibrate(mag_angle(&current_magnetometer));
+	mag_calibrate(&current_magnetometer);
 
 	// -------------------------------------------------------
 
@@ -277,7 +279,7 @@ int main(void)
 
 			//*********get sensor data**********
 			mag_read(&current_magnetometer);
-			double angle = mag_angle(&current_magnetometer);
+			int32_t angle = mag_angle(&current_magnetometer);
 			acc_read(&current_accelerometer);
 			gyro_read(&current_gyroscope);
 
@@ -303,6 +305,8 @@ int main(void)
 //			current_accelerometer.x_acc = (int32_t)angle;
 //			current_accelerometer.z_acc = current_magnetometer.mag_x;
 //			current_accelerometer.y_acc = current_magnetometer.mag_y;
+
+		    current_magnetometer.mag_z = angle;
 
 			// COMP_Value.Steps++;
 			COMP_Value.Heading += 5;
