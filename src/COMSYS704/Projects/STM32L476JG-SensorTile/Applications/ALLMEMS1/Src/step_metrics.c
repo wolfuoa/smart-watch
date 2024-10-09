@@ -15,11 +15,14 @@
 #define ACC_SAMPLING_FREQ_HZ 10
 #define PEAK_TO_PEAK_THRESHOLD 200
 #define PEAK_DETECTION_COOLDOWN_MS 100
+#define COOLDOWN_COUNTS 0
 
 
 uint8_t looking_for_max = 1;
 int32_t min;
 int32_t max;
+
+uint32_t cooldown_counter = COOLDOWN_COUNTS;
 
 void metrics_buffer_init(MetricsType *metrics, uint16_t size)
 {
@@ -56,6 +59,12 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 
     // ---------------- Step Counting Algorithm ----------------
 
+	if(cooldown_counter < COOLDOWN_COUNTS)
+	{
+		cooldown_counter++;
+		return;
+	}
+
     if(looking_for_max)
     {
 		metrics->debug = 0;
@@ -81,6 +90,8 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 			
 			if ((max >= metrics->high_threshold_filter->average - MIN_MAX_OFFSET) && (max >= 500))
 			{
+				cooldown_counter = 0;
+
 				looking_for_max = 0;
 				metrics->counter = 0;
 			}
@@ -113,6 +124,8 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 
 			if((min <= metrics->low_threshold_filter->average + MIN_MAX_OFFSET) && ((max - min) > PEAK_TO_PEAK_THRESHOLD))
 			{
+				cooldown_counter = 0;
+
 				XPRINTF("STEP DETECTED \t")
 				looking_for_max = 1;
 				metrics->step_detected = 1;

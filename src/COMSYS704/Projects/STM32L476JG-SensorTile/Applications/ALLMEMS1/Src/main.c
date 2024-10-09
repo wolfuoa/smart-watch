@@ -278,6 +278,7 @@ int main(void)
 			ReadSensor = 0;
 
 			//*********get sensor data**********
+
 			mag_read(&current_magnetometer);
 			int32_t angle = mag_angle(&current_magnetometer);
 			acc_read(&current_accelerometer);

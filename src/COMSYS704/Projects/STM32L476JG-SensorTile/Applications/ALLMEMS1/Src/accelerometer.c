@@ -48,56 +48,66 @@ void acc_read(AccelerometerData * ctx)
 	int16_t outy;
 	int16_t outz;
 
+	ctx->x_acc = 0;
+	ctx->y_acc = 0;
+	ctx->z_acc = 0;
 
-	BSP_LSM303AGR_ReadReg_Acc(0x28, &OUTX_L_A, 1);
-	BSP_LSM303AGR_ReadReg_Acc(0x29, &OUTX_H_A, 1);
-	BSP_LSM303AGR_ReadReg_Acc(0x2A, &OUTY_L_A, 1);
-	BSP_LSM303AGR_ReadReg_Acc(0x2B, &OUTY_H_A, 1);
-	BSP_LSM303AGR_ReadReg_Acc(0x2C, &OUTZ_L_A, 1);
-	BSP_LSM303AGR_ReadReg_Acc(0x2D, &OUTZ_H_A, 1);
-
-
-	outx = (OUTX_H_A << 8);
-	outy = (OUTY_H_A << 8);
-	outz = (OUTZ_H_A << 8);
-
-	outx |= OUTX_L_A;
-	outy |= OUTY_L_A;
-	outz |= OUTZ_L_A;
-
-	int negative;
-
-	negative = (OUTX_H_A >> 7);
-	if(negative)
+	for (int i = 0; i < 5; ++i)
 	{
-		ctx->x_acc = outx | ~((1 << 15) -1);
-	}
-	else
-	{
-		ctx->x_acc = outx;
-	}
 
-	negative = (OUTY_H_A >> 7);
-	if(negative)
-	{
-		ctx->y_acc = outy | ~((1 << 15) -1);
-	}
-	else
-	{
-		ctx->y_acc = outy;
-	}
-
-	negative = (OUTZ_H_A >> 7);
-	if(negative)
-	{
-		ctx->z_acc = outz | ~((1 << 15) -1);
-	}
-	else
-	{
-		ctx->z_acc = outz;
-	}
+		BSP_LSM303AGR_ReadReg_Acc(0x28, &OUTX_L_A, 1);
+		BSP_LSM303AGR_ReadReg_Acc(0x29, &OUTX_H_A, 1);
+		BSP_LSM303AGR_ReadReg_Acc(0x2A, &OUTY_L_A, 1);
+		BSP_LSM303AGR_ReadReg_Acc(0x2B, &OUTY_H_A, 1);
+		BSP_LSM303AGR_ReadReg_Acc(0x2C, &OUTZ_L_A, 1);
+		BSP_LSM303AGR_ReadReg_Acc(0x2D, &OUTZ_H_A, 1);
 
 
+		outx = (OUTX_H_A << 8);
+		outy = (OUTY_H_A << 8);
+		outz = (OUTZ_H_A << 8);
+
+		outx |= OUTX_L_A;
+		outy |= OUTY_L_A;
+		outz |= OUTZ_L_A;
+
+		int negative;
+
+		negative = (OUTX_H_A >> 7);
+		if(negative)
+		{
+			ctx->x_acc += outx | ~((1 << 15) -1);
+		}
+		else
+		{
+			ctx->x_acc += outx;
+		}
+
+		negative = (OUTY_H_A >> 7);
+		if(negative)
+		{
+			ctx->y_acc += outy | ~((1 << 15) -1);
+		}
+		else
+		{
+			ctx->y_acc += outy;
+		}
+
+		negative = (OUTZ_H_A >> 7);
+		if(negative)
+		{
+			ctx->z_acc += outz | ~((1 << 15) -1);
+		}
+		else
+		{
+			ctx->z_acc += outz;
+		}
+
+	}
+
+	ctx->x_acc /= 5;
+	ctx->y_acc /= 5;
+	ctx->z_acc /= 5;
 
 	// XPRINTF("A=%d\t%d\t%d\t",ctx->x_acc,ctx->y_acc,ctx->z_acc);
 }
