@@ -220,7 +220,15 @@ int main(void)
 
 	// --------------------- Calibration ---------------------
 
-	HAL_Delay(1000);
+	HAL_Delay(3000);
+	BSP_LED_Toggle(LED1);
+	for (int i = 0; i < 10; ++i)
+	{
+		HAL_Delay(60);
+		BSP_LED_Off(LED1);
+		HAL_Delay(60);
+		BSP_LED_Toggle(LED1);
+	}
 
 	mag_read(&current_magnetometer);
 	mag_calibrate(&current_magnetometer);

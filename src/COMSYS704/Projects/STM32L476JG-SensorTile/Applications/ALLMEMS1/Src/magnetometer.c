@@ -126,9 +126,10 @@ void mag_read(MagnetometerData * ctx)
 
 	// x : 650 - -125
 	// y : 425 - -325
-
-	ctx->mag_x = (outx * 1.5) - 250;
-	ctx->mag_y = (outy * 1.5) - 50;
+	// x : -600 100
+	// y : 325 -225
+	ctx->mag_x = (outx * 1.5);
+	ctx->mag_y = (outy * 1.5);
 	ctx->mag_z = outz * 1.5;
 
 	XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
