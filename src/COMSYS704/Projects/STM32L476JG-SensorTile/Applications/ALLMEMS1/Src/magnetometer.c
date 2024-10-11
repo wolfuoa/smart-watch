@@ -112,6 +112,7 @@ void mag_read(MagnetometerData * ctx)
 
 	int negative;
 
+	// Convert two's complement
 	negative = (outx_h >> 7);
 	if(negative)
 		outx = (outx | ~((1 << 15) -1));
@@ -124,26 +125,24 @@ void mag_read(MagnetometerData * ctx)
 	if(negative)
 		outz = (outz | ~((1 << 15) -1));
 
-	// x : 650 - -125
-	// y : 425 - -325
-	// x : -600 100
-	// y : 325 -225
+	// Add sensitivity and calibration factor
 	ctx->mag_x = (outx * 1.5);
-	ctx->mag_y = (outy * 1.5);
+	ctx->mag_y = (outy * 1.52) - 100;
 	ctx->mag_z = outz * 1.5;
-
-	XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
 }
 
 int32_t mag_angle(MagnetometerData *ctx)
 {
+	// Project the y and x magnetometer values onto a circle and
+	// measure the angle of the resultant vector with respect to
+	// the origin. Then, convert from radians to degrees.
 	int32_t angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
 	angle -= calibration_angle;
 
+	// Rectify angle to positive coordinates
 	angle = (angle < 0) ? angle + 360 : angle;
 
-	XPRINTF("Azimuth wrt magnetic North: %d \t Calibration: %d \t real angle: %d\r\n", (int)angle, (int)calibration_angle, (int)(angle + calibration_angle));
 	return angle;
 }
 
@@ -151,6 +150,8 @@ void mag_calibrate(MagnetometerData *ctx)
 {
 	int32_t angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
+	// Store the first angular reading as the calibration factor
+	// to later subtract from all angle readings.
 	calibration_angle = angle;
 }
 

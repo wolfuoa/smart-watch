@@ -1,12 +1,13 @@
 #include "step_metrics.h"
 #include <stdlib.h>
 
-// needed for XPRINTF
+// Includes for XPRINTF
 #include "SensorTile.h"
 #include "SensorTile_bus.h"
 #include "spi.h"
 #include "ALLMEMS1_config.h"
 
+// Constants used in step detection algorithm
 #define DYNAMIC_THRESHOLD_DEFAULT_VALUE_HIGH 1000
 #define DYNAMIC_THRESHOLD_DEFAULT_VALUE_LOW 500
 #define AVERAGE_FREQUENCY_DEFAULT_COUNTS 100
@@ -17,13 +18,13 @@
 #define PEAK_DETECTION_COOLDOWN_MS 100
 #define COOLDOWN_COUNTS 0
 
-
+// Step detection global variables
 uint8_t looking_for_max = 1;
 int32_t min;
 int32_t max;
 
-uint32_t cooldown_counter = COOLDOWN_COUNTS;
 
+// Filter and metrics initialization 
 void metrics_buffer_init(MetricsType *metrics, uint16_t size)
 {
 	int32_t *buffer = (int32_t *)calloc(size, sizeof(int32_t));
@@ -50,30 +51,25 @@ void metrics_buffer_init(MetricsType *metrics, uint16_t size)
 	metrics->debug = 0;
 }
 
+// Main step detection algoritm
 void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 {
 	metrics->data[metrics->index] = entry;
-
 	metrics->index = (metrics->index + 1) % metrics->size;
     metrics->center = (metrics->center + 1) % metrics->size;
 
+
     // ---------------- Step Counting Algorithm ----------------
 
-	if(cooldown_counter < COOLDOWN_COUNTS)
-	{
-		cooldown_counter++;
-		return;
-	}
-
+	// Start looking for peak
     if(looking_for_max)
     {
 		metrics->debug = 0;
 
-		// XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for peak\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
-
     	max = 0;
     	uint16_t max_index = metrics->index;
 
+		// Update max value on each loop
     	for (uint16_t i = 0; i < metrics->size; ++i)
     	{
     	    if (metrics->data[i] > max)
@@ -83,30 +79,29 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
     	    }
     	}
 
+		// Max value detected in center of the sliding window
     	if ((max_index == metrics->center))
 		{
 			XPRINTF("Peak detected\t")
 			filter_push(metrics->high_threshold_filter, max);
 			
+			// Start looking for an associated trough if the max peak is above thresholds
 			if ((max >= metrics->high_threshold_filter->average - MIN_MAX_OFFSET) && (max >= 500))
 			{
-				cooldown_counter = 0;
-
 				looking_for_max = 0;
 				metrics->counter = 0;
 			}
 		}
-
     }
     else
     {
 		metrics->debug = 1;
 		int temp = (max - min);
-		// XPRINTF("low thresh: %d\t high thresh: %d \t min: %d \t max: %d \t looking for trough\t", metrics->low_threshold_filter->average, metrics->high_threshold_filter->average, min, max)
 
 		min = 0x7FFFFFFF;
 		uint16_t min_index = metrics->index;
 
+		// Update min value on each loop
 		for (uint16_t i = 0; i < metrics->size; ++i)
 		{
 			if (metrics->data[i] < min)
@@ -116,30 +111,29 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 			}
 		}
 
+		// Min value detected in center of the sliding window
 		if (min_index == metrics->center)
 		{
 			XPRINTF("Found trough \t")
-
 			filter_push(metrics->low_threshold_filter, min);
 
+			// Trough associated with peak detected, increment step, and push count value into frequency filter to find step frequency
 			if((min <= metrics->low_threshold_filter->average + MIN_MAX_OFFSET) && ((max - min) > PEAK_TO_PEAK_THRESHOLD))
 			{
-				cooldown_counter = 0;
-
 				XPRINTF("STEP DETECTED \t")
 				looking_for_max = 1;
 				metrics->step_detected = 1;
 				filter_push(metrics->frequency_filter, metrics->counter);
 			}
-
 		}
 
-		// If no trough is detected, start looking for peak again
+		// If no trough is detected after a timout period, start looking for peak again
 		if(metrics->counter > TROUGH_SEARCH_TIMEOUT_MS/ACC_SAMPLING_FREQ_HZ)  
 		{
 			looking_for_max = 1;
 			XPRINTF("reset Peak\t")
 
+			// Reset dynamic thresholds to default and clear step frequency  
 			filter_flush(metrics->high_threshold_filter);
 			filter_flush(metrics->low_threshold_filter);
 			filter_flush(metrics->frequency_filter);
@@ -147,24 +141,20 @@ void metrics_buffer_push(MetricsType *metrics, int32_t entry)
 			metrics->high_threshold_filter->average = DYNAMIC_THRESHOLD_DEFAULT_VALUE_HIGH;
 			metrics->low_threshold_filter->average = DYNAMIC_THRESHOLD_DEFAULT_VALUE_LOW;
 			metrics->frequency_filter->average = AVERAGE_FREQUENCY_DEFAULT_COUNTS;
-
 		}
-
     }
 
-
     // ---------------------------------------------------------
-    
 }
 
+// Clears buffers
 void metrics_buffer_free(MetricsType *metrics)
 {
 	free(metrics->data);
 }
 
-// counter increments every time the accelerometer is sampled from main loop
+// Counter increments every time the accelerometer is sampled from main loop
 void metrics_counter(MetricsType *metrics)
 {
 	metrics->counter++;
-	// XPRINTF("Curr metrics_count: %d \t", metrics->counter);
 }
