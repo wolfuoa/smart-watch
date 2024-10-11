@@ -37,8 +37,9 @@ To build and flash this code onto the SensorTile, perform the following steps:
 3. In the projects window, ensure that only one tickbox is selected, named `COMPSYS704 (~/smart-watch/src/COMPSYS704/Projects/STM32L476G-SensorTile/Applications/ALLMEMS1/STM32CubeIDE)`.
 4. Along the top bar click on the hammer icon to build the project.
 5. Once the project has finished building, click on the green play button also along the top bar, to run and flash the code to the SensorTile.
-6. The performance can be validated via putty, or by connecting to the SensorTile via a mobile app such as "ST BLE Sensor".
-7. On the BLE Sensor app, click on Plot Data and select one of three tabs: Accelerometer, Gyroscope, Magnetometer
-8. Press the play button to receive data. Magnetometer displays the raw sensor data, Accelerometer displays averaged acceleration data, and Gyroscope displays total steps, heading and distance traveled.
+6. The board takes 5 seconds to boot and calibrate. As soon as this is finished, the LED on the sensor chip will flash rapidly 10 times. Once finished, you may connect to the board. If any technical difficulties arise, turn the board off and on again until you can connect to it.
+7. The performance can be validated via putty, or by connecting to the SensorTile via a mobile app such as "ST BLE Sensor".
+8. On the BLE Sensor app, click on Plot Data and select one of three tabs: Accelerometer, Gyroscope, Magnetometer
+9. Press the play button to receive data. Magnetometer displays the raw sensor data, Accelerometer displays averaged acceleration data, and Gyroscope displays total steps, heading and distance traveled.
 
 
