@@ -9,6 +9,8 @@
 #define LSM_MAG_CS_HIGH()					 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
 #define PI 3.1415926F
 
+volatile int32_t calibration_angle = 0;
+
 extern SPI_HandleTypeDef hbusspi2;
 
 static int32_t BSP_LSM303AGR_WriteReg_Mag(uint16_t Reg, uint8_t *pdata,  uint16_t len);
@@ -51,11 +53,11 @@ void mag_init()
 	 *
 	 ** current config
 	 *
-	 * 0b00000000
+	 * 0b00000010
 	 *
 	 */
 
-	entry = 0x00U;
+	entry = 0x02U;
 	BSP_LSM303AGR_WriteReg_Mag(0x61U, &entry, 1);
 
 	// ----------------------------------------------------
@@ -110,6 +112,7 @@ void mag_read(MagnetometerData * ctx)
 
 	int negative;
 
+	// Convert two's complement
 	negative = (outx_h >> 7);
 	if(negative)
 		outx = (outx | ~((1 << 15) -1));
@@ -122,20 +125,34 @@ void mag_read(MagnetometerData * ctx)
 	if(negative)
 		outz = (outz | ~((1 << 15) -1));
 
-	ctx->mag_x = outx * 1.5;
-	ctx->mag_y = outy * 1.5;
+	// Add sensitivity and calibration factor
+	ctx->mag_x = (outx * 1.5);
+	ctx->mag_y = (outy * 1.52) - 100;
 	ctx->mag_z = outz * 1.5;
-
-	XPRINTF("MAG=%d,%d,%d\r\n", ctx->mag_x, ctx->mag_y, ctx->mag_z);
 }
 
-double mag_angle(MagnetometerData *ctx)
+int32_t mag_angle(MagnetometerData *ctx)
 {
-	double angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
+	// Project the y and x magnetometer values onto a circle and
+	// measure the angle of the resultant vector with respect to
+	// the origin. Then, convert from radians to degrees.
+	int32_t angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
 
-	XPRINTF("Azimuth wrt magnetic North: %d\r\n", (int)angle);
+	angle -= calibration_angle;
+
+	// Rectify angle to positive coordinates
+	angle = (angle < 0) ? angle + 360 : angle;
 
 	return angle;
+}
+
+void mag_calibrate(MagnetometerData *ctx)
+{
+	int32_t angle = (float)180/PI * atan2(ctx->mag_y, ctx->mag_x);
+
+	// Store the first angular reading as the calibration factor
+	// to later subtract from all angle readings.
+	calibration_angle = angle;
 }
 
 /**

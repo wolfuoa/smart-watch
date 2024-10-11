@@ -33,6 +33,7 @@ typedef struct FilterType_t
 void filter_init(FilterType *filter, uint16_t size);
 void filter_free(FilterType *filter);
 void filter_push(FilterType *filter, int32_t entry);
+void filter_flush(FilterType *filter);
 
 // ------------------------------------------------
 

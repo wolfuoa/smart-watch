@@ -120,7 +120,7 @@ GyroscopeData current_gyroscope;
 COMP_Data COMP_Value;
 BSP_MOTION_SENSOR_Axes_t MAG_Value;
 
-FilterType acc_z_filter;
+FilterType acc_filter;
 MetricsType metrics;
 
 
@@ -206,15 +206,31 @@ int main(void)
 
 	// ---------------- Filter Initialization ----------------
 
-	filter_init(&acc_z_filter, 16);
-	// filter_init(acc_y_filter, 8);
-	// filter_init(acc_x_filter, 8);
+	filter_init(&acc_filter, 32);
 
 	// -------------------------------------------------------
 
 	// ------------- Step Metrics Initialization -------------
 
-	metrics_buffer_init(&metrics, 16);
+	metrics_buffer_init(&metrics, 24);
+
+	// -------------------------------------------------------
+
+	// --------------------- Calibration ---------------------
+
+	HAL_Delay(3000);
+	BSP_LED_Toggle(LED1);
+	for (int i = 0; i < 10; ++i)
+	{
+		HAL_Delay(60);
+		BSP_LED_Off(LED1);
+		HAL_Delay(60);
+		BSP_LED_Toggle(LED1);
+	}
+
+	// Zero the current angle reading
+	mag_read(&current_magnetometer);
+	mag_calibrate(&current_magnetometer);
 
 	// -------------------------------------------------------
 
@@ -228,8 +244,8 @@ int main(void)
 	/* Infinite loop */
 	while (1)
 	{
-
 		static int32_t previous_value = 0;
+		static float total_distance = 0.0;
 
 
 		if (!connected)
@@ -268,34 +284,54 @@ int main(void)
 		{
 			ReadSensor = 0;
 
-			//*********get sensor data**********
+			// ---------------- Read Sensor Data ----------------
+
 			mag_read(&current_magnetometer);
-			double angle = mag_angle(&current_magnetometer);
+			int32_t angle = mag_angle(&current_magnetometer);
 			acc_read(&current_accelerometer);
 			gyro_read(&current_gyroscope);
 
-			//*********process sensor data*********
+			// --------------------------------------------------
 
+			// ------------------ Process Data ------------------
+
+			// Calculate the absolute magnitude of accelerometer data and push to the averaging window filter
 			int32_t sum = abs(current_accelerometer.x_acc) + abs(current_accelerometer.y_acc) + abs(current_accelerometer.z_acc);
+			filter_push(&acc_filter, sum);
 
-			filter_push(&acc_z_filter, sum);
-			metrics_buffer_push(&metrics, acc_z_filter.average);
-			XPRINTF("Current Z Average : %d \r\n", acc_z_filter.average);
-
+			// Push the re-calclated averave acceleration data to the step metrics buffer for further evaluation
+			metrics_buffer_push(&metrics, acc_filter.average);
+			metrics_counter(&metrics);
+			
+			// Evaluate the status of the step metrics buffer caused by the last entry
 			if(metrics.step_detected == 1)
 			{
 				COMP_Value.Steps++;
+				metrics.step_detected = 0;
+
+				// Calculate distance traveled forward
+				if(metrics.frequency_filter->count <= 4)
+				{
+					// Initial distance estimation while step frequency is unavailable
+					total_distance += 0.3139 * 1.77;
+				}
+				else
+				{
+					// Incorporates step frequency into the distance calculation
+					total_distance += 0.3139 * 1.77 * sqrt(metrics.frequency_filter->average);
+				}
+
 			}
 
-			current_accelerometer.x_acc = COMP_Value.Steps;
-			current_accelerometer.z_acc = acc_z_filter.average;
-			current_accelerometer.y_acc = 0;
+			// Debugging to validate if step detection is working
+			current_accelerometer.x_acc = (metrics.debug == 0) ? 1500 : 0;
+			current_accelerometer.y_acc = COMP_Value.Steps;
+		    current_accelerometer.z_acc = acc_filter.average;
 
-			// COMP_Value.Steps++;
-			COMP_Value.Heading += 5;
-			COMP_Value.Distance += 10;
+			COMP_Value.Heading = angle;
+			COMP_Value.Distance = (uint32_t)(total_distance * 100.0);
 
-			XPRINTF("\n\n\nSteps = %d \r\n\n\n", (int)COMP_Value.Steps);
+			XPRINTF("\r\n")
 		}
 
 		//***************************************************
@@ -312,7 +348,7 @@ int main(void)
 		__WFI();
 	}
 
-	filter_free(&acc_z_filter);
+	filter_free(&acc_filter);
 
 }
 
@@ -425,7 +461,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  */
 static void SendMotionData(void)
 {
-	AccGyroMag_Update(&current_accelerometer, &current_gyroscope, &current_magnetometer);
+	AccGyroMag_Update(&current_accelerometer, (BSP_MOTION_SENSOR_Axes_t *)&COMP_Value, &current_magnetometer);
 }
 
 /**
