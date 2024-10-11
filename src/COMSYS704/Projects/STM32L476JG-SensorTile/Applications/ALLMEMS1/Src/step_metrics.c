@@ -16,7 +16,6 @@
 #define ACC_SAMPLING_FREQ_HZ 10
 #define PEAK_TO_PEAK_THRESHOLD 200
 #define PEAK_DETECTION_COOLDOWN_MS 100
-#define COOLDOWN_COUNTS 0
 
 // Step detection global variables
 uint8_t looking_for_max = 1;
